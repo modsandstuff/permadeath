@@ -46,8 +46,8 @@ public class Permadeath implements WurmServerMod, Configurable, ServerStartedLis
                         Player player = (Player) object;
 
                         if (permadeath && player.getPower() < 2) {
-                            player.ban("You are banned because you are dead", 9223372036854775807L);
-                            Players.getInstance().removeBannedIp(player.getCommunicator().getConnection().getIp());
+                            player.getSaveFile().setBanned(true, "You are banned because you are dead", 9223372036854775807L);
+                            player.logoutIn(5, "You are banned because you are dead");
                             return method.invoke(object, args);
                         } else {
                             return method.invoke(object, args);
