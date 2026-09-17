@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#efe3c2">
+<title>Longmeadow</title>
+<style>
+:root{--ink:#261f18;--muted:#6f6254;--paper:#f4ead0;--panel:#fff8e8;--line:#cdbc98;--green:#5f7448;--green2:#829666;--red:#9a5548;--gold:#a77d2a;--shadow:0 8px 24px rgba(52,40,24,.10)}
+*{box-sizing:border-box}html{background:#e7d9b7;color:var(--ink);font-family:ui-rounded,"SF Pro Rounded",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{margin:0;background:linear-gradient(#dfe8c8 0 240px,#e7d9b7 240px 100%);min-height:100vh}.app{max-width:720px;margin:0 auto;padding:12px 12px 32px}.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:6px 2px 10px}.title h1{font-family:Georgia,serif;font-size:28px;line-height:1;margin:0}.title p{margin:5px 0 0;color:var(--muted);font-size:13px}.iconbtn{border:1px solid rgba(65,51,33,.25);background:rgba(255,248,232,.78);color:var(--ink);min-width:44px;height:44px;border-radius:12px;font-size:19px;box-shadow:0 2px 8px rgba(0,0,0,.05)}button{font:inherit;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}.scene{position:relative;height:222px;border:1px solid rgba(75,64,43,.18);border-radius:22px;overflow:hidden;background:linear-gradient(#b9d6db 0 46%,#cbd79a 46% 60%,#899957 60% 100%);box-shadow:var(--shadow)}.sun{position:absolute;right:28px;top:24px;width:46px;height:46px;border-radius:50%;background:#f1d68b;box-shadow:0 0 0 8px rgba(255,237,174,.20)}.hill{position:absolute;left:-8%;right:-8%;bottom:58px;height:88px;background:#9cac69;border-radius:50% 50% 0 0/80% 80% 0 0}.hill.two{left:38%;right:-30%;bottom:51px;height:110px;background:#91a15d}.ground{position:absolute;left:0;right:0;bottom:0;height:78px;background:#7f8f4c}.path{position:absolute;left:46%;bottom:-18px;width:72px;height:112px;background:#c4a56c;transform:rotate(8deg);clip-path:polygon(42% 0,68% 0,100% 100%,0 100%)}.river{position:absolute;left:-20px;right:-20px;bottom:18px;height:20px;border-radius:50%;background:#8eb8bd;transform:rotate(-2deg);opacity:.9}.tree{position:absolute;bottom:56px;width:24px;height:67px}.tree:before{content:"";position:absolute;left:9px;bottom:0;width:7px;height:34px;background:#705338;border-radius:3px}.tree:after{content:"";position:absolute;left:-8px;top:0;width:42px;height:43px;background:#657d48;border-radius:50% 45% 50% 44%}.t1{left:6%;transform:scale(.9)}.t2{left:15%;bottom:62px;transform:scale(.67)}.t3{right:8%;bottom:58px;transform:scale(.82)}.t4{right:18%;bottom:66px;transform:scale(.57)}.building{position:absolute;bottom:50px;filter:drop-shadow(0 5px 3px rgba(46,35,21,.15));transition:opacity .25s,transform .25s}.building.locked{opacity:0;transform:translateY(10px) scale(.9);pointer-events:none}.hut{left:28%;width:86px;height:58px;background:#b68a55;border:3px solid #61492e;border-radius:2px}.hut:before{content:"";position:absolute;left:-9px;top:-31px;width:98px;height:42px;background:#705033;clip-path:polygon(50% 0,100% 78%,90% 100%,50% 30%,10% 100%,0 78%)}.hut:after{content:"";position:absolute;left:33px;bottom:0;width:18px;height:31px;background:#5a4029;border-radius:9px 9px 0 0}.garden{left:11%;bottom:43px;width:78px;height:36px;border:3px solid #7b5b3f;background:repeating-linear-gradient(90deg,#648244 0 6px,#92a45c 6px 11px);transform:skewY(-4deg)}.workshop{right:24%;width:79px;height:54px;background:#9e7650;border:3px solid #5d462e}.workshop:before{content:"";position:absolute;left:-6px;top:-24px;width:85px;height:30px;background:#66503e;clip-path:polygon(20% 0,100% 15%,93% 100%,0 100%)}.market{right:8%;bottom:48px;width:60px;height:46px;border:3px solid #65503b;background:#d5b269}.market:before{content:"";position:absolute;left:-5px;top:-18px;width:64px;height:22px;background:repeating-linear-gradient(90deg,#9a5548 0 10px,#eee2bc 10px 20px);clip-path:polygon(4% 0,96% 0,100% 100%,0 100%)}.hall{left:47%;bottom:50px;width:93px;height:72px;background:#bea16b;border:3px solid #59452e}.hall:before{content:"";position:absolute;left:-10px;top:-34px;width:107px;height:39px;background:#6e4c33;clip-path:polygon(50% 0,100% 100%,0 100%)}.hall:after{content:"";position:absolute;left:39px;bottom:0;width:20px;height:37px;background:#65462e}.palisade{position:absolute;left:2%;right:2%;bottom:37px;height:68px;border-bottom:8px solid #745132;opacity:1;transition:opacity .25s}.palisade.locked{opacity:0}.palisade:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 8px,#765334 8px 15px,transparent 15px 17px);clip-path:polygon(0 24%,100% 0,100% 100%,0 100%)}.sceneLabel{position:absolute;left:12px;top:10px;padding:5px 9px;border-radius:999px;background:rgba(255,248,232,.76);backdrop-filter:blur(4px);font-size:12px;font-weight:700;color:#4a412f}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.stat{background:rgba(255,248,232,.85);border:1px solid rgba(82,65,42,.15);border-radius:14px;padding:9px 8px;text-align:center}.stat b{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}.dayrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 2px 8px}.dayrow strong{font-family:Georgia,serif;font-size:20px}.dayrow span{font-size:13px;color:var(--muted)}.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.action{position:relative;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:12px 12px 11px;min-height:84px;color:var(--ink);box-shadow:0 2px 0 rgba(74,56,34,.05)}.action:active{transform:translateY(1px)}.action .emoji{font-size:23px;display:block;margin-bottom:5px}.action b{font-size:14px;display:block}.action small{display:block;color:var(--muted);font-size:11px;line-height:1.3;margin-top:3px}.section{margin-top:16px}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin:0 2px 8px}.sectionhead h2{font-family:Georgia,serif;font-size:18px;margin:0}.sectionhead span{font-size:11px;color:var(--muted)}.builds{display:grid;gap:8px}.build{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:rgba(255,248,232,.78);border:1px solid rgba(91,73,45,.17);border-radius:15px;padding:11px}.build.done{opacity:.68}.build h3{font-size:14px;margin:0 0 3px}.build p{font-size:11px;color:var(--muted);margin:0;line-height:1.35}.cost{font-size:11px;margin-top:5px;color:#584b39}.buy{border:0;background:var(--green);color:white;border-radius:11px;padding:9px 12px;font-weight:750;font-size:12px;min-width:76px;min-height:40px}.end{width:100%;margin-top:14px;border:0;border-radius:16px;padding:14px 16px;background:#493c2e;color:#fff;font-weight:800;font-size:15px;box-shadow:0 4px 0 #2f261e}.end:active{transform:translateY(2px);box-shadow:0 2px 0 #2f261e}.log{background:rgba(255,248,232,.65);border:1px solid rgba(84,68,46,.14);border-radius:15px;padding:10px 12px;max-height:170px;overflow:auto}.log p{font-size:12px;line-height:1.4;margin:7px 0}.log p:first-child{margin-top:0}.log .old{color:var(--muted)}.toast{position:sticky;bottom:10px;margin:10px auto 0;width:max-content;max-width:90%;background:#342b22;color:#fff;padding:9px 12px;border-radius:999px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}.overlay{position:fixed;inset:0;background:rgba(25,20,15,.55);display:none;align-items:flex-end;justify-content:center;padding:12px;z-index:20}.overlay.show{display:flex}.modal{width:100%;max-width:696px;background:#fff7e5;border-radius:22px 22px 16px 16px;padding:18px;box-shadow:0 -8px 28px rgba(0,0,0,.22)}.modal .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800}.modal h2{font-family:Georgia,serif;margin:5px 0 8px;font-size:23px}.modal p{font-size:14px;line-height:1.5;color:#4d4134;margin:0 0 14px}.choices{display:grid;gap:8px}.choice{border:1px solid var(--line);background:#fffaf0;border-radius:13px;padding:12px;text-align:left;min-height:50px;color:var(--ink)}.choice b{display:block;font-size:13px}.choice small{display:block;color:var(--muted);margin-top:2px}.menu{position:fixed;inset:0;background:rgba(25,20,15,.48);display:none;align-items:flex-start;justify-content:center;padding:70px 14px 14px;z-index:30}.menu.show{display:flex}.menucard{width:100%;max-width:520px;background:#fff8e8;border-radius:20px;padding:16px;box-shadow:var(--shadow)}.menucard h2{font-family:Georgia,serif;margin:0 0 4px}.menucard p{font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.4}.menubtns{display:grid;gap:8px}.menubtn{border:1px solid var(--line);background:#fffdf7;border-radius:12px;padding:11px;text-align:left;min-height:44px}.danger{color:#863e35}.closemenu{margin-top:10px;width:100%;border:0;background:#493c2e;color:white;border-radius:12px;padding:11px}.win{display:none;background:#faf1d5;border:2px solid #ad8b43;border-radius:18px;padding:14px;margin-top:14px}.win.show{display:block}.win h2{font-family:Georgia,serif;margin:0 0 5px}.win p{font-size:12px;color:var(--muted);line-height:1.45;margin:0}.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#e7d8ad;color:#5c4b2e;font-size:10px;font-weight:800;margin-left:6px}@media(min-width:620px){.actions{grid-template-columns:repeat(3,1fr)}.builds{grid-template-columns:repeat(2,1fr)}.scene{height:250px}}@media(max-width:370px){.stat{padding:8px 4px}.stat b{font-size:16px}.action{padding:10px;min-height:82px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="title"><h1>Longmeadow</h1><p>Build a village, one day at a time.</p></div>
+    <button class="iconbtn" id="menuBtn" aria-label="Game menu">☰</button>
+  </header>
+
+  <section class="scene" aria-label="Your growing settlement">
+    <div class="sun"></div><div class="hill"></div><div class="hill two"></div><div class="ground"></div><div class="river"></div><div class="path"></div>
+    <div class="tree t1"></div><div class="tree t2"></div><div class="tree t3"></div><div class="tree t4"></div>
+    <div class="palisade locked" data-visual="palisade"></div>
+    <div class="building hut" data-visual="hut"></div>
+    <div class="building garden locked" data-visual="garden"></div>
+    <div class="building workshop locked" data-visual="workshop"></div>
+    <div class="building market locked" data-visual="market"></div>
+    <div class="building hall locked" data-visual="hall"></div>
+    <div class="sceneLabel" id="settlementLabel">A lonely camp</div>
+  </section>
+
+  <section class="stats" aria-label="Resources">
+    <div class="stat"><b id="food">8</b><span>🌾 Food</span></div>
+    <div class="stat"><b id="wood">4</b><span>🪵 Wood</span></div>
+    <div class="stat"><b id="coin">2</b><span>🪙 Coin</span></div>
+    <div class="stat"><b id="renown">0</b><span>✦ Renown</span></div>
+  </section>
+
+  <div class="dayrow"><div><strong id="day">Day 1</strong><span class="badge" id="season">Early Spring</span></div><span id="actionsLeft">3 actions left</span></div>
+
+  <section class="actions" id="actions">
+    <button class="action" data-action="forage"><span class="emoji">🧺</span><b>Forage</b><small>Reliable food; sometimes find herbs or coin.</small></button>
+    <button class="action" data-action="chop"><span class="emoji">🪓</span><b>Gather timber</b><small>Bring back wood for buildings.</small></button>
+    <button class="action" data-action="trade"><span class="emoji">⚖️</span><b>Trade</b><small>Swap 2 food for 2–4 coin.</small></button>
+    <button class="action" data-action="explore"><span class="emoji">🧭</span><b>Explore</b><small>Risk a day’s work for discoveries and renown.</small></button>
+    <button class="action" data-action="tend"><span class="emoji">🌱</span><b>Tend the plots</b><small>Needs a garden. Food now, better harvest later.</small></button>
+    <button class="action" data-action="craft"><span class="emoji">🔨</span><b>Craft goods</b><small>Needs a workshop. Turn wood into coin and renown.</small></button>
+  </section>
+
+  <button class="end" id="endDay">End day</button>
+
+  <section class="section">
+    <div class="sectionhead"><h2>Build</h2><span>Permanent improvements</span></div>
+    <div class="builds" id="builds"></div>
+  </section>
+
+  <div class="win" id="win"><h2>The village stands.</h2><p>You turned a camp beside the river into a settlement people know by name. You can keep playing: later days become about prosperity rather than survival.</p></div>
+
+  <section class="section">
+    <div class="sectionhead"><h2>Village journal</h2><span>Newest first</span></div>
+    <div class="log" id="log" aria-live="polite"></div>
+  </section>
+  <div class="toast" id="toast" aria-live="polite"></div>
+</div>
+
+<div class="overlay" id="eventOverlay" role="dialog" aria-modal="true" aria-labelledby="eventTitle">
+  <div class="modal">
+    <div class="eyebrow">A village event</div><h2 id="eventTitle"></h2><p id="eventText"></p><div class="choices" id="eventChoices"></div>
+  </div>
+</div>
+
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+  <div class="menucard"><h2 id="menuTitle">Game menu</h2><p>Your game autosaves in this browser after every action and choice.</p>
+    <div class="menubtns">
+      <button class="menubtn" id="exportBtn"><b>Download backup</b><br><small>Save a JSON copy of your village.</small></button>
+      <label class="menubtn" for="importInput"><b>Restore backup</b><br><small>Load a previously downloaded save.</small></label><input id="importInput" type="file" accept="application/json,.json" hidden>
+      <button class="menubtn danger" id="resetBtn"><b>Start again</b><br><small>Erase this browser’s current village.</small></button>
+    </div>
+    <button class="closemenu" id="closeMenu">Back to village</button>
+  </div>
+</div>
+
+<script>
+(()=>{
+'use strict';
+const SAVE_KEY='longmeadow-save-v1';
+const BUILDINGS=[
+ {id:'garden',name:'Kitchen garden',desc:'+1 food every morning. Unlocks Tend the plots.',cost:{wood:8,food:3},req:()=>true},
+ {id:'storehouse',name:'Storehouse',desc:'Foraging and timber actions gain +1.',cost:{wood:12,coin:2},req:()=>true},
+ {id:'workshop',name:'Workshop',desc:'Unlocks Craft goods and improves building quality.',cost:{wood:18,coin:5},req:s=>s.buildings.garden},
+ {id:'market',name:'Market stall',desc:'+1 coin every morning. Trade gives +1 coin.',cost:{wood:14,coin:8,renown:5},req:s=>s.buildings.workshop},
+ {id:'house',name:'Two cottages',desc:'Families settle here. +1 renown every 3 days.',cost:{wood:22,food:8,coin:4},req:s=>s.day>=5},
+ {id:'palisade',name:'Timber palisade',desc:'Makes the settlement secure. Bad events hurt less.',cost:{wood:30,coin:10,renown:10},req:s=>s.buildings.house},
+ {id:'hall',name:'Village hall',desc:'The final landmark. Longmeadow becomes a true village.',cost:{wood:38,coin:24,renown:22},req:s=>s.buildings.market&&s.buildings.palisade}
+];
+const EVENTS=[
+ {id:'herbalist',title:'A travelling herbalist',text:'A woman with bundles of dried leaves asks to shelter by your fire. In return, she offers knowledge or coin.',choices:[
+  {label:'Share supper',note:'-2 food, +3 renown',need:s=>s.food>=2,do:s=>{s.food-=2;s.renown+=3;return 'The herbalist tells stories late into the evening. Word travels.'}},
+  {label:'Buy her remedies',note:'-3 coin, +4 food',need:s=>s.coin>=3,do:s=>{s.coin-=3;s.food+=4;return 'Her preserving salts keep the stores usable for longer.'}},
+  {label:'Wish her safe travels',note:'No cost',do:s=>{s.renown+=1;return 'She remembers your courtesy.'}}
+ ]},
+ {id:'boar',title:'Boar in the barley',text:'A huge boar tears through the edge of your plots before dawn.',choices:[
+  {label:'Drive it off',note:'Gain food; some risk',do:s=>{if(Math.random()<.65){s.food+=5;return 'The boar becomes supper. A rough morning, but a useful one.'}s.food=Math.max(0,s.food-2);return 'It escapes after wrecking part of the crop.'}},
+  {label:'Let it pass',note:'Lose 1 food',do:s=>{s.food=Math.max(0,s.food-1);return 'You lose a little crop and keep everyone unhurt.'}}
+ ]},
+ {id:'merchant',title:'A cart on the north road',text:'A cloth merchant has broken an axle nearby and needs timber before dusk.',choices:[
+  {label:'Give 4 wood',note:'-4 wood, +7 coin',need:s=>s.wood>=4,do:s=>{s.wood-=4;s.coin+=7;return 'The merchant pays generously and promises to stop here again.'}},
+  {label:'Repair it properly',note:'Workshop: -3 wood, +5 coin, +3 renown',need:s=>s.buildings.workshop&&s.wood>=3,do:s=>{s.wood-=3;s.coin+=5;s.renown+=3;return 'Your workshop turns a favour into a reputation for skilled hands.'}},
+  {label:'Decline',note:'No change',do:s=>{return 'The cart eventually creaks away.'}}
+ ]},
+ {id:'rain',title:'Three days of rain',text:'The river rises and the track becomes a ribbon of mud.',choices:[
+  {label:'Dig drainage',note:'-3 wood, +2 renown',need:s=>s.wood>=3,do:s=>{s.wood-=3;s.renown+=2;return 'The ditches hold. Neighbours notice the sensible work.'}},
+  {label:'Stay indoors',note:'Lose 1 food',do:s=>{s.food=Math.max(0,s.food-1);return 'Little gets done, but the roofs hold.'}}
+ ]},
+ {id:'family',title:'A family at the ford',text:'A family travelling south asks whether there is room to stay for the season.',choices:[
+  {label:'Make room',note:'House: -4 food, +5 renown',need:s=>s.buildings.house&&s.food>=4,do:s=>{s.food-=4;s.renown+=5;s.people=(s.people||3)+2;return 'They stay. Longmeadow feels less like an outpost.'}},
+  {label:'Offer provisions',note:'-2 food, +2 renown',need:s=>s.food>=2,do:s=>{s.food-=2;s.renown+=2;return 'They leave fed, and speak well of the place.'}},
+  {label:'Turn them away',note:'No cost',do:s=>{return 'They continue downriver.'}}
+ ]},
+ {id:'ruin',title:'Stones under the nettles',text:'An old foundation appears on the edge of the wood, older than any road nearby.',choices:[
+  {label:'Search carefully',note:'50% coin / 50% renown',do:s=>{if(Math.random()<.5){s.coin+=6;return 'Beneath a hearthstone you find a small pouch of old silver.'}s.renown+=4;return 'You uncover a carved boundary stone. People come to see it.'}},
+  {label:'Take dressed stone',note:'+5 wood equivalent, -1 renown',do:s=>{s.wood+=5;s.renown=Math.max(0,s.renown-1);return 'Useful material, though a few travellers disapprove.'}}
+ ]},
+ {id:'feast',title:'The first feast',text:'Someone suggests stopping work early and putting a proper meal on the long table.',choices:[
+  {label:'Hold a feast',note:'-6 food, +7 renown',need:s=>s.food>=6,do:s=>{s.food-=6;s.renown+=7;return 'Music carries over the meadow. For once, nobody counts the stores.'}},
+  {label:'A modest supper',note:'-2 food, +2 renown',need:s=>s.food>=2,do:s=>{s.food-=2;s.renown+=2;return 'Nothing grand, but people linger by the fire.'}},
+  {label:'Not yet',note:'No change',do:s=>{return 'There will be time for celebration later.'}}
+ ]},
+ {id:'wolves',title:'Eyes beyond the firelight',text:'Wolves have been heard close to the livestock path.',choices:[
+  {label:'Set night watches',note:'-1 food, +2 renown',need:s=>s.food>=1,do:s=>{s.food-=1;s.renown+=2;return 'The nights pass quietly under watch.'}},
+  {label:'Trust the palisade',note:'Requires palisade; +1 renown',need:s=>s.buildings.palisade,do:s=>{s.renown+=1;return 'The new wall earns its keep.'}},
+  {label:'Do nothing',note:'Small chance to lose food',do:s=>{if(Math.random()<.45){s.food=Math.max(0,s.food-3);return 'In the morning, part of the food store is ruined.'}return 'The wolves move on.'}}
+ ]},
+ {id:'bard',title:'A singer from the coast',text:'A travelling singer offers an evening of songs for a place to sleep.',choices:[
+  {label:'Welcome them',note:'-2 food, +4 renown',need:s=>s.food>=2,do:s=>{s.food-=2;s.renown+=4;return 'By morning, Longmeadow has acquired a song of its own.'}},
+  {label:'Ask for news instead',note:'+2 coin',do:s=>{s.coin+=2;return 'A tip about market prices pays off on the next cart.'}}
+ ]},
+ {id:'tax',title:'The reeve’s clerk',text:'A clerk appears with a tidy ledger and an untidy horse. He says the road is now prosperous enough to notice.',choices:[
+  {label:'Pay the toll',note:'-5 coin, +2 renown',need:s=>s.coin>=5,do:s=>{s.coin-=5;s.renown+=2;return 'The receipt is pompous, but official recognition has its uses.'}},
+  {label:'Offer supplies',note:'-4 food',need:s=>s.food>=4,do:s=>{s.food-=4;return 'The clerk accepts provisions in lieu of coin.'}},
+  {label:'Argue the boundary',note:'50% success',do:s=>{if(Math.random()<.5){s.renown+=3;return 'Against expectation, your reading of the old marker is correct.'}s.coin=Math.max(0,s.coin-3);return 'The clerk adds a fee for wasting his afternoon.'}}
+ ]}
+];
+function initial(){return {version:1,day:1,actions:3,food:8,wood:4,coin:2,renown:0,people:3,buildings:{hut:true},plotCare:0,seenEvents:[],journal:[{day:1,text:'Three households have stopped beside a bend in the river. There is enough food for now, and plenty of work to do.'}],won:false};}
+let state=load();
+const $=sel=>document.querySelector(sel);
+const $$=sel=>Array.from(document.querySelectorAll(sel));
+function load(){try{const raw=localStorage.getItem(SAVE_KEY);if(!raw)return initial();const s=JSON.parse(raw);return Object.assign(initial(),s,{buildings:Object.assign({hut:true},s.buildings||{})});}catch(e){return initial();}}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(state));}catch(e){}}
+function clamp(){for(const k of ['food','wood','coin','renown'])state[k]=Math.max(0,Math.floor(Number(state[k])||0));state.actions=Math.max(0,Math.min(3,Math.floor(Number(state.actions)||0)));state.day=Math.max(1,Math.floor(Number(state.day)||1));}
+function season(){const d=((state.day-1)%32)+1;if(d<=8)return 'Early Spring';if(d<=16)return 'High Summer';if(d<=24)return 'Harvest';return 'First Frost';}
+function tier(){const n=Object.keys(state.buildings).filter(k=>state.buildings[k]).length;if(state.buildings.hall)return 'Longmeadow Village';if(n>=6)return 'A fortified hamlet';if(n>=4)return 'A growing hamlet';if(n>=2)return 'A riverside settlement';return 'A lonely camp';}
+function addLog(text){state.journal=state.journal||[];state.journal.unshift({day:state.day,text});state.journal=state.journal.slice(0,30);}
+function toast(msg){const el=$('#toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1400);}
+function afford(cost){return Object.entries(cost).every(([k,v])=>(state[k]||0)>=v)}
+function spend(cost){for(const [k,v] of Object.entries(cost))state[k]-=v}
+function costText(c){const icons={food:'🌾',wood:'🪵',coin:'🪙',renown:'✦'};return Object.entries(c).map(([k,v])=>`${icons[k]} ${v}`).join('  ·  ')}
+function render(){clamp();
+ $('#food').textContent=state.food;$('#wood').textContent=state.wood;$('#coin').textContent=state.coin;$('#renown').textContent=state.renown;$('#day').textContent=`Day ${state.day}`;$('#season').textContent=season();$('#actionsLeft').textContent=`${state.actions} action${state.actions===1?'':'s'} left`;$('#settlementLabel').textContent=tier();
+ $$('#actions .action').forEach(b=>{const id=b.dataset.action;let enabled=state.actions>0;if(id==='trade'&&state.food<2)enabled=false;if(id==='tend'&&!state.buildings.garden)enabled=false;if(id==='craft'&&(!state.buildings.workshop||state.wood<2))enabled=false;b.disabled=!enabled;});
+ const vis={garden:state.buildings.garden,workshop:state.buildings.workshop,market:state.buildings.market,palisade:state.buildings.palisade,hall:state.buildings.hall};Object.entries(vis).forEach(([k,v])=>{const e=document.querySelector(`[data-visual="${k}"]`);if(e)e.classList.toggle('locked',!v)});
+ const wrap=$('#builds');wrap.innerHTML='';BUILDINGS.forEach(b=>{const done=!!state.buildings[b.id],available=b.req(state);const el=document.createElement('div');el.className='build'+(done?' done':'');const info=document.createElement('div');info.innerHTML=`<h3>${b.name}${done?' <span class="badge">Built</span>':''}</h3><p>${b.desc}</p><div class="cost">${costText(b.cost)}</div>`;const btn=document.createElement('button');btn.className='buy';btn.textContent=done?'Built':available?'Build':'Locked';btn.disabled=done||!available||!afford(b.cost);btn.addEventListener('click',()=>build(b));el.append(info,btn);wrap.appendChild(el)});
+ const log=$('#log');log.innerHTML='';(state.journal||[]).slice(0,12).forEach((j,i)=>{const p=document.createElement('p');if(i>2)p.className='old';p.innerHTML=`<b>Day ${j.day}.</b> ${escapeHtml(j.text)}`;log.appendChild(p)});
+ $('#win').classList.toggle('show',!!state.won);save();}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function useAction(id){if(state.actions<=0)return;let msg='';
+ if(id==='forage'){let gain=3+rand(0,2)+(state.buildings.storehouse?1:0);state.food+=gain;if(Math.random()<.18){state.coin+=1;msg=`Foraged ${gain} food and found a lost coin.`}else msg=`Foraged ${gain} food along the riverbank.`}
+ if(id==='chop'){let gain=3+rand(0,2)+(state.buildings.storehouse?1:0);state.wood+=gain;msg=`Brought back ${gain} timber from the coppice.`}
+ if(id==='trade'){if(state.food<2)return;state.food-=2;const gain=rand(2,4)+(state.buildings.market?1:0);state.coin+=gain;msg=`Traded preserved food for ${gain} coin.`}
+ if(id==='explore'){const r=Math.random();if(r<.42){const g=rand(2,5);state.renown+=2;state.coin+=g;msg=`Followed an old track to a roadside shrine: +${g} coin, +2 renown.`}else if(r<.78){const g=rand(3,6);state.wood+=g;state.renown+=1;msg=`Found an abandoned charcoal camp: +${g} wood, +1 renown.`}else{state.food=Math.max(0,state.food-1);state.renown+=3;msg='Returned cold and hungry after mapping the high ridge: -1 food, +3 renown.'}}
+ if(id==='tend'){if(!state.buildings.garden)return;const g=2+(state.plotCare>=2?1:0);state.food+=g;state.plotCare=Math.min(5,(state.plotCare||0)+1);msg=`Tended the plots: +${g} food. The soil is improving.`}
+ if(id==='craft'){if(!state.buildings.workshop||state.wood<2)return;state.wood-=2;const c=3+(state.buildings.market?1:0);state.coin+=c;state.renown+=1;msg=`Crafted stools and pegs for passing traders: +${c} coin, +1 renown.`}
+ state.actions--;addLog(msg);render();toast(msg);}
+function build(b){if(state.buildings[b.id]||!b.req(state)||!afford(b.cost))return;spend(b.cost);state.buildings[b.id]=true;let text=`Built the ${b.name.toLowerCase()}.`;
+ if(b.id==='house'){state.people=(state.people||3)+2;text='Two cottages are finished. Smoke rises from more chimneys now.'}
+ if(b.id==='hall'){state.won=true;state.renown+=8;text='The village hall opens with a meal, a bell, and far too many speeches. Longmeadow is now a village.'}
+ addLog(text);render();toast(text);}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function endDay(){if($('#eventOverlay').classList.contains('show'))return;
+ let summary=[];let upkeep=Math.max(1,Math.ceil((state.people||3)/3));state.food=Math.max(0,state.food-upkeep);summary.push(`-${upkeep} food eaten`);
+ if(state.buildings.garden){let g=1+(state.plotCare>=3?1:0);state.food+=g;summary.push(`+${g} garden food`)}
+ if(state.buildings.market){state.coin+=1;summary.push('+1 market coin')}
+ if(state.buildings.house&&state.day%3===0){state.renown+=1;summary.push('+1 household renown')}
+ if(state.food===0){state.renown=Math.max(0,state.renown-1);summary.push('-1 renown: empty stores')}
+ state.day++;state.actions=3;addLog(`Morning comes. ${summary.join(', ')}.`);render();
+ if(state.day>=3&&Math.random()<.48)showEvent();else toast('A new day begins.');}
+function showEvent(){let pool=EVENTS.filter(e=>!(state.seenEvents||[]).includes(e.id));if(!pool.length){state.seenEvents=[];pool=EVENTS.slice()}const ev=pool[rand(0,pool.length-1)];state.seenEvents=(state.seenEvents||[]).concat(ev.id);save();$('#eventTitle').textContent=ev.title;$('#eventText').textContent=ev.text;const c=$('#eventChoices');c.innerHTML='';ev.choices.forEach(ch=>{const b=document.createElement('button');b.className='choice';const ok=!ch.need||ch.need(state);b.disabled=!ok;b.innerHTML=`<b>${escapeHtml(ch.label)}</b><small>${escapeHtml(ch.note||'')}</small>`;b.addEventListener('click',()=>{const result=ch.do(state);addLog(`${ev.title}: ${result}`);$('#eventOverlay').classList.remove('show');render();toast(result)});c.appendChild(b)});$('#eventOverlay').classList.add('show');}
+function exportSave(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`longmeadow-day-${state.day}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function importSave(file){const r=new FileReader();r.onload=()=>{try{const obj=JSON.parse(String(r.result));if(!obj||typeof obj.day!=='number')throw new Error('bad');state=Object.assign(initial(),obj,{buildings:Object.assign({hut:true},obj.buildings||{})});addLog('A saved village was restored.');$('#menu').classList.remove('show');render();toast('Backup restored.')}catch(e){toast('That file is not a Longmeadow save.')}};r.readAsText(file)}
+function reset(){if(!confirm('Erase this village and start again from Day 1?'))return;state=initial();save();$('#menu').classList.remove('show');render();toast('A new settlement begins.');}
+$$('[data-action]').forEach(b=>b.addEventListener('click',()=>useAction(b.dataset.action)));$('#endDay').addEventListener('click',endDay);$('#menuBtn').addEventListener('click',()=>$('#menu').classList.add('show'));$('#closeMenu').addEventListener('click',()=>$('#menu').classList.remove('show'));$('#exportBtn').addEventListener('click',exportSave);$('#importInput').addEventListener('change',e=>{if(e.target.files&&e.target.files[0])importSave(e.target.files[0]);e.target.value=''});$('#resetBtn').addEventListener('click',reset);$('#menu').addEventListener('click',e=>{if(e.target===$('#menu'))$('#menu').classList.remove('show')});render();
+})();
+</script>
+</body>
+</html>
