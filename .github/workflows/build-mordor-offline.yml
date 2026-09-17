@@ -1,0 +1,55 @@
+name: Build Mordor offline
+
+on:
+  push:
+    paths:
+      - '.github/workflows/build-mordor-offline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build self-contained HTML
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p mordor-offline
+          curl -L --fail --retry 3 -o /tmp/MORDOR11.ZIP https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP
+          curl -L --fail --retry 3 -o /tmp/jszip.min.js https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, re
+
+          src = Path('mordor-web/index.html').read_text()
+          jszip = Path('/tmp/jszip.min.js').read_text()
+          zip64 = base64.b64encode(Path('/tmp/MORDOR11.ZIP').read_bytes()).decode('ascii')
+
+          src = src.replace('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>', '<script>\n'+jszip+'\n</script>')
+          src = src.replace("const SHARE='https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP';", "const EMBEDDED_MORDOR_ZIP='"+zip64+"';")
+
+          old = "async function autoLoad(){try{let res=await fetch(SHARE,{cache:'force-cache'});if(!res.ok)throw Error('HTTP '+res.status);readPackage(await res.arrayBuffer())}catch(e){$('#loadText').textContent='Automatic download failed: '+e.message;$('#manual').hidden=false;$('#prog').value=0}}"
+          new = "async function autoLoad(){try{$('#loadText').textContent='Opening embedded Mordor shareware data…';$('#prog').value=20;const bin=atob(EMBEDDED_MORDOR_ZIP);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);await readPackage(bytes); }catch(e){$('#loadText').textContent='Embedded data could not be opened: '+e.message;$('#manual').hidden=false;$('#prog').value=0}}"
+          if old not in src:
+              raise SystemExit('Could not find old autoLoad()')
+          src = src.replace(old, new)
+          src = src.replace('Downloading the original 2.5 MB shareware package.', 'Opening the embedded PUBLIC v1.1 shareware data. No additional download is required.')
+          src = src.replace('The PUBLIC/shareware package is loaded at runtime.', 'The freely redistributable PUBLIC/shareware package is embedded directly in this single HTML file.')
+          src = src.replace('<title>Mordor Web — unofficial shareware browser adaptation</title>', '<title>Mordor Web — self-contained</title>')
+          Path('mordor-offline/index.html').write_text(src)
+          print('Built', Path('mordor-offline/index.html').stat().st_size, 'bytes')
+          PY
+      - name: Commit generated build
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add mordor-offline/index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Add self-contained Mordor web build'
+          git push
