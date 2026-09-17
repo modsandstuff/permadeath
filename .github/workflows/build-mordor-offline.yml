@@ -14,34 +14,112 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build self-contained HTML
+      - name: Build zero-runtime-decompression HTML
         shell: bash
         run: |
           set -euxo pipefail
-          mkdir -p mordor-offline
+          mkdir -p mordor-static
           curl -L --fail --retry 3 -o /tmp/MORDOR11.ZIP https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP
-          curl -L --fail --retry 3 -o /tmp/jszip.min.js https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js
           python3 - <<'PY'
           from pathlib import Path
-          import base64, re
+          import io, json, struct, zipfile
 
           src = Path('mordor-web/index.html').read_text()
-          jszip = Path('/tmp/jszip.min.js').read_text()
-          zip64 = base64.b64encode(Path('/tmp/MORDOR11.ZIP').read_bytes()).decode('ascii')
 
-          src = src.replace('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>', '<script>\n'+jszip+'\n</script>')
-          src = src.replace("const SHARE='https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP';", "const EMBEDDED_MORDOR_ZIP='"+zip64+"';")
+          with zipfile.ZipFile('/tmp/MORDOR11.ZIP') as outer:
+              wip_name = next(n for n in outer.namelist() if n.upper().endswith('MORDOR.WIP'))
+              wip_bytes = outer.read(wip_name)
+          with zipfile.ZipFile(io.BytesIO(wip_bytes)) as inner:
+              def get(name):
+                  hit = next(n for n in inner.namelist() if n.upper().endswith(name))
+                  return inner.read(hit)
+              b_spells = get('MDATA2.MDR')
+              b_items = get('MDATA3.MDR')
+              b_monsters = get('MDATA5.MDR')
+              b_dungeon = get('MDATA11.MDR')
 
-          old = "async function autoLoad(){try{let res=await fetch(SHARE,{cache:'force-cache'});if(!res.ok)throw Error('HTTP '+res.status);readPackage(await res.arrayBuffer())}catch(e){$('#loadText').textContent='Automatic download failed: '+e.message;$('#manual').hidden=false;$('#prog').value=0}}"
-          new = "async function autoLoad(){try{$('#loadText').textContent='Opening embedded Mordor shareware data…';$('#prog').value=20;const bin=atob(EMBEDDED_MORDOR_ZIP);const bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);await readPackage(bytes); }catch(e){$('#loadText').textContent='Embedded data could not be opened: '+e.message;$('#manual').hidden=false;$('#prog').value=0}}"
-          if old not in src:
-              raise SystemExit('Could not find old autoLoad()')
-          src = src.replace(old, new)
-          src = src.replace('Downloading the original 2.5 MB shareware package.', 'Opening the embedded PUBLIC v1.1 shareware data. No additional download is required.')
-          src = src.replace('The PUBLIC/shareware package is loaded at runtime.', 'The freely redistributable PUBLIC/shareware package is embedded directly in this single HTML file.')
-          src = src.replace('<title>Mordor Web — unofficial shareware browser adaptation</title>', '<title>Mordor Web — self-contained</title>')
-          Path('mordor-offline/index.html').write_text(src)
-          print('Built', Path('mordor-offline/index.html').stat().st_size, 'bytes')
+          class R:
+              def __init__(self, data, rec_len, n):
+                  off=(n-1)*rec_len
+                  self.b=memoryview(data)[off:off+rec_len]
+                  self.p=0
+              def i16(self):
+                  v=struct.unpack_from('<h',self.b,self.p)[0]; self.p+=2; return v
+              def u16(self):
+                  v=struct.unpack_from('<H',self.b,self.p)[0]; self.p+=2; return v
+              def i32(self):
+                  v=struct.unpack_from('<i',self.b,self.p)[0]; self.p+=4; return v
+              def f32(self):
+                  v=struct.unpack_from('<f',self.b,self.p)[0]; self.p+=4; return v
+              def cur(self):
+                  v=struct.unpack_from('<q',self.b,self.p)[0]; self.p+=8; return int(v/10000)
+              def string(self,n=0):
+                  if not n: n=self.u16()
+                  raw=bytes(self.b[self.p:self.p+n]); self.p+=n
+                  return raw.decode('cp1252',errors='replace').rstrip('\x00').strip()
+
+          def parse_spells(b):
+              n=R(b,75,2).u16(); out=[]
+              for k in range(n):
+                  r=R(b,75,4+k)
+                  x={'name':r.string(),'id':r.i16(),'cat':r.i16(),'level':r.i16(),'u4':r.i16(),'kill':r.i16(),'monster':r.i16(),'group':r.i16(),'d1':r.i16(),'d2':r.i16(),'effect':r.i16(),'req':[]}
+                  x['req']=[r.i16() for _ in range(7)]; x['resist']=r.i16(); out.append(x)
+              return out
+
+          def parse_items(b):
+              n=R(b,125,3).u16(); out=[]
+              for k in range(n):
+                  r=R(b,125,4+k)
+                  x={'name':r.string(),'id':r.i16(),'att':r.i16(),'def':r.i16(),'price':r.i32(),'floor':r.i16(),'rarity':r.i16(),'abilities':r.i32(),'swings':r.i16(),'special':r.i16(),'spellIndex':r.i16(),'spellId':r.i16(),'charges':r.i32(),'guilds':r.i32(),'scale':r.i16(),'damage':r.f32(),'align':r.i32(),'hands':r.i16(),'type':r.i16(),'resFlags':r.i32(),'req':[],'mods':[]}
+                  x['req']=[r.i16() for _ in range(7)]; x['mods']=[r.i16() for _ in range(7)]
+                  x['cursed']=r.i16(); x['spellLvl']=r.i16(); x['restricted']=r.i16(); out.append(x)
+              return out
+
+          def parse_monsters(b):
+              n=R(b,160,3).u16(); out=[]
+              for k in range(n):
+                  r=R(b,160,4+k)
+                  x={'name':r.string(),'att':r.i16(),'def':r.i16(),'id':r.i16(),'hits':r.i16(),'groups':r.i16(),'pic':r.i16(),'lock':r.i16(),'found':r.i16(),'res':[]}
+                  x['res']=[r.i16() for _ in range(12)]; x['props']=r.i32(); x['special']=r.i32(); x['spellFlags']=r.i32(); x['chance']=r.i16(); x['box']=[r.i16() for _ in range(4)]; x['align']=r.i16(); x['ingroup']=r.i16(); x['goldFactor']=r.i32(); x['traps']=r.i32(); x['guildLevel']=r.i16(); x['stats']=[r.i16() for _ in range(7)]; x['type']=r.i16(); x['damage']=r.f32(); x['companionType']=r.i16(); x['spawnMode']=r.i16(); x['companionId']=r.i16(); x['items']=[r.i16() for _ in range(11)]; x['subtype']=r.i16(); x['companionSubtype']=r.i16(); x['size']=r.i16(); x['dropLevel']=r.i16(); x['itemChance']=r.i16(); out.append(x)
+              return out
+
+          def parse_dungeon(b):
+              levels=R(b,20,1).u16(); offs=[R(b,20,2+i).u16() for i in range(levels)]; floors=[]
+              for z in range(levels):
+                  rec=offs[z]; r=R(b,20,rec); rec+=1
+                  w,h,level=r.u16(),r.u16(),r.u16(); na,nc,nt=r.u16(),r.u16(),r.u16()
+                  fl={'w':w,'h':h,'level':level,'fields':[],'areas':[],'tele':[],'chutes':[]}
+                  for _ in range(w*h):
+                      r=R(b,20,rec); rec+=1; fl['fields'].append({'area':r.i16(),'flags':r.cur()})
+                  r=R(b,20,rec); rec+=1; r.u16()
+                  for _ in range(201):
+                      r=R(b,20,rec); rec+=1; fl['areas'].append({'spawn':r.i32(),'lair':r.i16()})
+                  r=R(b,20,rec); rec+=1; r.u16()
+                  for _ in range(nt):
+                      r=R(b,20,rec); rec+=1; t={'x':r.i16(),'y':r.i16(),'x2':r.i16(),'y2':r.i16(),'z2':r.i16()}
+                      if t['x']>0 and t['y']>0: fl['tele'].append(t)
+                  r=R(b,20,rec); rec+=1; r.u16()
+                  for _ in range(nc):
+                      r=R(b,20,rec); rec+=1; c={'x':r.i16(),'y':r.i16(),'depth':r.i16()}
+                      if c['x']>0 and c['y']>0: fl['chutes'].append(c)
+                  floors.append(fl)
+              return floors
+
+          data={'spells':parse_spells(b_spells),'items':parse_items(b_items),'monsters':parse_monsters(b_monsters),'floors':parse_dungeon(b_dungeon)}
+          packed=json.dumps(data,separators=(',',':'),ensure_ascii=False).replace('<','\\u003c')
+
+          src=src.replace('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>','')
+          src=src.replace("const SHARE='https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP';",'const EMBEDDED_DATA='+packed+';')
+          old="async function autoLoad(){try{let res=await fetch(SHARE,{cache:'force-cache'});if(!res.ok)throw Error('HTTP '+res.status);readPackage(await res.arrayBuffer())}catch(e){$('#loadText').textContent='Automatic download failed: '+e.message;$('#manual').hidden=false;$('#prog').value=0}}"
+          new="function autoLoad(){try{$('#loadText').textContent='Starting embedded Mordor data…';$('#prog').value=95;data=EMBEDDED_DATA;$('#prog').value=100;setTimeout(startGame,0)}catch(e){$('#loadText').textContent='Embedded data error: '+e.message;$('#prog').value=0}}"
+          if old not in src: raise SystemExit('Could not patch autoLoad')
+          src=src.replace(old,new)
+          src=src.replace('Downloading the original 2.5 MB shareware package.','Starting the embedded PUBLIC v1.1 game data. No download or decompression is required.')
+          src=src.replace('The PUBLIC/shareware package is loaded at runtime.','The PUBLIC/shareware records were extracted at build time and are embedded directly in this HTML file.')
+          src=src.replace('<title>Mordor Web — unofficial shareware browser adaptation</title>','<title>Mordor Web — instant embedded build</title>')
+          Path('mordor-static/index.html').write_text(src)
+          print('Counts',len(data['monsters']),len(data['items']),len(data['spells']),len(data['floors']))
+          print('Built bytes',Path('mordor-static/index.html').stat().st_size)
           PY
       - name: Commit generated build
         shell: bash
@@ -49,7 +127,7 @@ jobs:
           set -euxo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add mordor-offline/index.html
+          git add mordor-static/index.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Add self-contained Mordor web build'
+          git commit -m 'Add pre-extracted Mordor web build'
           git push
