@@ -1,5 +1,5 @@
 from pathlib import Path
-import io,json,struct,sys,zipfile
+import io,json,struct,sys,zipfile,re
 
 zip_path=Path(sys.argv[1]); src_path=Path(sys.argv[2]); out_path=Path(sys.argv[3])
 src=src_path.read_text()
@@ -74,15 +74,24 @@ def dungeon(b):
 
 data={'spells':spells(bs),'items':items(bi),'monsters':monsters(bm),'floors':dungeon(bd)}
 print('parsed:',len(data['spells']),'spells,',len(data['items']),'items,',len(data['monsters']),'monsters,',len(data['floors']),'floors')
-packed=json.dumps(data,separators=(',',':'),ensure_ascii=False).replace('<','\\u003c')
+packed=json.dumps(data,separators=(',',':'),ensure_ascii=True)
+
+# Remove every piece of runtime download/decompression/binary parsing. The phone only
+# receives ordinary JS objects plus the game code.
 src=src.replace('<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>','')
 src=src.replace("const SHARE='https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP';",'const EMBEDDED_DATA='+packed+';')
-old="async function autoLoad(){try{let res=await fetch(SHARE,{cache:'force-cache'});if(!res.ok)throw Error('HTTP '+res.status);readPackage(await res.arrayBuffer())}catch(e){$('#loadText').textContent='Automatic download failed: '+e.message;$('#manual').hidden=false;$('#prog').value=0}}"
-new="function autoLoad(){try{$('#loadText').textContent='Starting embedded Mordor data…';$('#prog').value=100;data=EMBEDDED_DATA;startGame()}catch(e){$('#loadText').textContent='Embedded data error: '+e.message;$('#prog').value=0}}"
-if old not in src:raise SystemExit('autoLoad signature not found')
-src=src.replace(old,new)
-src=src.replace('Downloading the original 2.5 MB shareware package.','Starting embedded PUBLIC v1.1 data. No download or decompression is required.')
-src=src.replace('The PUBLIC/shareware package is loaded at runtime.','The PUBLIC/shareware records are pre-extracted and embedded in this page.')
-src=src.replace('<title>Mordor Web — unofficial shareware browser adaptation</title>','<title>Mordor Web — static embedded build</title>')
+pat=r"let data=\{spells:\[\],items:\[\],monsters:\[\],floors:\[\]\}, state=null, encounter=null, current='town';\s*let td=new TextDecoder\('windows-1252'\);.*?\$\('#zipFile'\)\.addEventListener\('change'.*?\);\s*function fresh"
+replacement="let data=EMBEDDED_DATA, state=null, encounter=null, current='town';\nfunction fresh"
+src,n=re.subn(pat,replacement,src,count=1,flags=re.S)
+if n!=1: raise SystemExit(f'could not strip runtime parser: {n}')
+
+# Start directly; there is nothing left to load.
+src=src.replace("setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),1000);$('#clock').textContent='';autoLoad();",
+                "setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),1000);$('#clock').textContent='';$('#prog').value=100;startGame();")
+src=src.replace('Downloading the original 2.5 MB shareware package.','Starting embedded PUBLIC v1.1 data. No download, decoding or decompression is required.')
+src=src.replace('The PUBLIC/shareware package is loaded at runtime.','The PUBLIC/shareware records are pre-extracted at build time and embedded directly in this page.')
+src=src.replace('<title>Mordor Web — unofficial shareware browser adaptation</title>','<title>Mordor Web — instant static build</title>')
+# Manual ZIP controls are now irrelevant.
+src=src.replace('<div id="manual" hidden><p>If automatic loading fails, choose your own <b>MORDOR11.ZIP</b> or retail Mordor ZIP.</p><input id="zipFile" type="file" accept=".zip,application/zip"></div>','')
 out_path.parent.mkdir(parents=True,exist_ok=True);out_path.write_text(src)
 print('built',out_path,out_path.stat().st_size,'bytes')
