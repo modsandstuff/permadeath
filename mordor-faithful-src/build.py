@@ -11,15 +11,13 @@ pos = html.find(marker)
 if pos < 0:
     raise SystemExit('EMBEDDED_DATA marker not found in mordor-static/index.html')
 
-# Decode the embedded PUBLIC v1.1 tables, then re-serialize as strict JSON.
 decoder = json.JSONDecoder()
 raw_start = pos + len(marker)
 obj, consumed = decoder.raw_decode(html[raw_start:])
 raw_end = raw_start + consumed
 
-# Remove the giant data object from executable JavaScript. Mobile browsers now
-# parse only the engine as JavaScript; the original data sits in an inert JSON
-# element and is parsed after startup.
+# Keep the original PUBLIC data, but remove the giant object literal from the
+# executable JS source. Android only has to parse the game engine as JS.
 end = raw_end
 while end < len(html) and html[end].isspace():
     end += 1
@@ -50,12 +48,19 @@ if old not in html:
     raise SystemExit('data initialization not found')
 html = html.replace(old, new, 1)
 
-# Correct the city name while preserving Dejenol as the dungeon name.
+# The prior static prototype contained a real syntax error in its About click
+# handler. Fix that source defect in the generated edition.
+bad_about = "$('#about').onclick=()=>dialog(`"
+if bad_about not in html:
+    raise SystemExit('About handler pattern not found')
+html = html.replace(bad_about, "$('#about').onclick=()=>{dialog(`", 1)
+
+# Correct town name from the original game/manual; Dejenol is the dungeon.
 html = html.replace('City of Dejenol', 'City of Marlith')
 html = html.replace('Mordor Web — instant static build', 'Mordor: The Depths of Dejenol — PUBLIC v1.1 Browser Edition')
 
-# Independent startup-error reporter: a failure should display on the loading
-# panel rather than looking like a permanent 10% load.
+# Independent startup-error reporter so any future browser incompatibility is
+# shown on the loading panel instead of freezing at 10%.
 reporter = '''<script>
 window.addEventListener('error',function(e){
   var t=document.getElementById('loadText'),p=document.getElementById('prog');
@@ -68,8 +73,8 @@ html = html.replace(data_tag + main_script, data_tag + reporter + main_script, 1
 out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(html, encoding='utf-8')
 
-# Syntax-check all ordinary inline scripts. The application/json element is
-# intentionally ignored because it is data rather than executable source.
+# Syntax-check every executable inline script. application/json is deliberately
+# excluded because it is data, not source code.
 scripts = re.findall(r'<script>(.*?)</script>', html, flags=re.S|re.I)
 checked = 0
 for script in scripts:
