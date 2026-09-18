@@ -11,17 +11,15 @@ pos = html.find(marker)
 if pos < 0:
     raise SystemExit('EMBEDDED_DATA marker not found in mordor-static/index.html')
 
-# Decode the object literal as JSON, then re-serialize it as strict JSON.  In
-# particular this removes any non-finite floating point values which browsers'
-# JSON.parse cannot accept.
+# Decode the embedded PUBLIC v1.1 tables, then re-serialize as strict JSON.
 decoder = json.JSONDecoder()
 raw_start = pos + len(marker)
 obj, consumed = decoder.raw_decode(html[raw_start:])
 raw_end = raw_start + consumed
 
-# Remove the executable giant object literal.  This was the fragile part of the
-# previous Android build: the JS parser had to parse hundreds of KB of data as
-# source before any startup code could run.
+# Remove the giant data object from executable JavaScript. Mobile browsers now
+# parse only the engine as JavaScript; the original data sits in an inert JSON
+# element and is parsed after startup.
 end = raw_end
 while end < len(html) and html[end].isspace():
     end += 1
@@ -39,29 +37,25 @@ def clean(v):
     return v
 
 obj = clean(obj)
-data_json = json.dumps(obj, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
-# Prevent an accidental closing script tag inside a data string.
-data_json = data_json.replace('</', '<\\/')
-
+data_json = json.dumps(obj, ensure_ascii=False, separators=(',', ':'), allow_nan=False).replace('</', '<\\/')
 data_tag = '<script id="mordor-data" type="application/json">' + data_json + '</script>\n'
 main_script = '<script>\n(()=>{'
 if main_script not in html:
     raise SystemExit('Main script start not found')
 html = html.replace(main_script, data_tag + main_script, 1)
 
-old = 'data=EMBEDDED_DATA;startGame()'
-new = 'data=JSON.parse(document.getElementById("mordor-data").textContent);startGame()'
+old = 'let data=EMBEDDED_DATA, state=null, encounter=null, current=\'town\';'
+new = 'let data=JSON.parse(document.getElementById("mordor-data").textContent), state=null, encounter=null, current=\'town\';'
 if old not in html:
-    raise SystemExit('autoLoad assignment not found')
+    raise SystemExit('data initialization not found')
 html = html.replace(old, new, 1)
 
-# Use the original town name from the game/manual rather than the dungeon name.
+# Correct the city name while preserving Dejenol as the dungeon name.
 html = html.replace('City of Dejenol', 'City of Marlith')
 html = html.replace('Mordor Web — instant static build', 'Mordor: The Depths of Dejenol — PUBLIC v1.1 Browser Edition')
 
-# Put a tiny independent startup-error reporter before the main script.  If an
-# old/mobile browser rejects later code, the loading screen will display the
-# error rather than appearing to hang forever at 10%.
+# Independent startup-error reporter: a failure should display on the loading
+# panel rather than looking like a permanent 10% load.
 reporter = '''<script>
 window.addEventListener('error',function(e){
   var t=document.getElementById('loadText'),p=document.getElementById('prog');
@@ -74,13 +68,11 @@ html = html.replace(data_tag + main_script, data_tag + reporter + main_script, 1
 out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(html, encoding='utf-8')
 
-# Validate every executable inline script.  application/json blocks are data,
-# not JavaScript, and are intentionally skipped.
-scripts = re.findall(r'<script(?:\\s+[^>]*)?>(.*?)</script>', html, flags=re.S|re.I)
+# Syntax-check all ordinary inline scripts. The application/json element is
+# intentionally ignored because it is data rather than executable source.
+scripts = re.findall(r'<script>(.*?)</script>', html, flags=re.S|re.I)
 checked = 0
 for script in scripts:
-    if script.lstrip().startswith(data_json[:32]):
-        continue
     if not script.strip():
         continue
     with tempfile.NamedTemporaryFile('w', suffix='.js', encoding='utf-8', delete=False) as f:
