@@ -13,19 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build static embedded game
+      - name: Build static embedded game and canonical PUBLIC data
         shell: bash
         run: |
           set -euxo pipefail
           curl -L --fail --retry 3 -o /tmp/MORDOR11.ZIP https://raw.githubusercontent.com/matteo-prosperi/DungeonsOfDejremake/main/tests/fixtures/MORDOR11.ZIP
-          python3 tools/build_mordor_static.py /tmp/MORDOR11.ZIP mordor-web/index.html mordor-static/index.html
+          python3 tools/build_mordor_static.py /tmp/MORDOR11.ZIP mordor-web/index.html mordor-static/index.html mordor-data/public-v11.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('mordor-data/public-v11.json'))
+          assert d['game']['version']=='1.1'
+          assert len(d['game']['races'])==9
+          assert len(d['game']['guilds'])==12
+          assert len(d['spells'])==105
+          assert len(d['items'])==366
+          assert len(d['monsters'])==401
+          assert len(d['floors'])==3
+          print('validated PUBLIC v1.1 data')
+          PY
       - name: Commit generated build
         shell: bash
         run: |
           set -euxo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add mordor-static/index.html
+          git add mordor-static/index.html mordor-data/public-v11.json
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Build pre-extracted Mordor web version'
+          git commit -m 'Build complete Mordor PUBLIC data'
           git push
