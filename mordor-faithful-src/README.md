@@ -1,0 +1,1 @@
+Build sources for the browser adaptation of Mordor: The Depths of Dejenol PUBLIC v1.1. The generated output is written to ../mordor-faithful/index.html by build.py.
