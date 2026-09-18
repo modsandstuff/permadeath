@@ -1,0 +1,30 @@
+name: Build faithful Mordor browser version
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'mordor-faithful-src/**'
+      - '.github/workflows/mordor-faithful.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: python3 mordor-faithful-src/build.py
+      - name: Commit generated browser build
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mordor-faithful/index.html
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+          else
+            git commit -m "Build faithful Mordor browser version"
+            git push
+          fi
