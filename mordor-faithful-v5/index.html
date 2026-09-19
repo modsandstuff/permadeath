@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Mordor: The Depths of Dejenol — Browser Edition</title>
+<style>
+:root{--desk:#008080;--win:#c0c0c0;--white:#fff;--shadow:#404040;--blue:#000080;--hi:#dfdfdf;--ink:#000}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--desk);font:14px Arial,Helvetica,sans-serif;color:#000}
+button,input,select{font:inherit;color:#000}button{min-height:38px;padding:5px 9px;background:#c0c0c0;border:2px outset #eee}button:active{border-style:inset}button:disabled{color:#777}
+.app{max-width:980px;margin:0 auto;padding:6px}.window{background:#c0c0c0;border:2px outset #eee;box-shadow:2px 2px 0 #000}
+.titlebar{background:linear-gradient(90deg,#000080,#1084d0);color:#fff;font-weight:bold;padding:5px 7px;display:flex;justify-content:space-between;gap:8px}
+.menubar{display:flex;flex-wrap:wrap;gap:3px;padding:4px;border-bottom:1px solid #777}.menubar button{min-height:30px;padding:3px 8px}
+.main{padding:6px}.status{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-bottom:6px}.status .box{background:#fff;border:2px inset #eee;text-align:center;padding:4px;min-width:0}.box b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.box small{font-size:10px;color:#555}
+.layout{display:grid;grid-template-columns:180px minmax(0,1fr) 220px;gap:6px}.panel{background:#fff;border:2px inset #eee;padding:7px;margin-bottom:6px}.panel h2,.panel h3{font-family:"Times New Roman",serif;margin:0 0 6px}.panel h2{font-size:21px}.panel h3{font-size:17px}
+.partycard{padding:6px;border:1px solid #aaa;margin-bottom:5px;background:#f7f7f7;cursor:pointer}.partycard.active{outline:2px solid #000080;background:#eef}.partycard.dead{background:#eee;color:#777}.partycard b{display:block}.tiny{font-size:11px;color:#555}.danger{color:#900}.good{color:#060}
+.view{background:#050505;border:2px inset #eee;min-height:310px}.view canvas{width:100%;height:auto;display:block}.mapbox{background:#111;border:2px inset #eee}.mapbox canvas{width:100%;height:auto;display:block;image-rendering:pixelated}
+.commands{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:5px}.commands button{min-height:42px}.dpad{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:5px}.dpad .up{grid-column:2}.dpad .left{grid-column:1}.dpad .back{grid-column:2}.dpad .right{grid-column:3}
+.townGrid,.grid2,.grid3{display:grid;gap:6px}.townGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.townGrid button{text-align:left;min-height:64px}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:6px 2px;border-bottom:1px solid #ccc}.row:last-child{border-bottom:0}
+.tabs{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px}.tabs button.active{border-style:inset;background:#fff}
+.log{height:126px;overflow:auto;background:#fff;border:2px inset #eee;padding:5px;font:12px/1.3 monospace}.log p{margin:0 0 3px}
+.combat{background:#fff3f3;border:2px solid #800000;padding:7px;margin-top:6px}.combat h3{color:#800000}.bar{height:13px;background:#333;border:1px solid #000}.bar i{display:block;height:100%;background:#b00000}.mbar i{background:#000080}
+.notice{background:#ffffd5;border:1px solid #888;padding:6px;margin:5px 0}.wininput{width:100%;padding:6px;background:#fff;border:2px inset #eee}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:12px;z-index:99}.modal.on{display:flex}.dialog{width:min(620px,100%);max-height:88vh;overflow:auto;background:#c0c0c0;border:2px outset #eee;padding:8px}.dialog h2{font-family:"Times New Roman",serif;margin:0 0 8px}
+.footer{font-size:10px;padding:5px 7px;line-height:1.3}.sep{height:1px;background:#777;border-bottom:1px solid #fff;margin:5px 0}
+@media(max-width:780px){.layout{grid-template-columns:1fr}.partyPanel{order:2}.rightPanel{order:3}.view{min-height:260px}.status{grid-template-columns:repeat(3,1fr)}.townGrid{grid-template-columns:1fr}.commands{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:380px){.app{padding:2px}.main{padding:3px}.commands{grid-template-columns:repeat(2,1fr)}.status{gap:2px}.box{padding:2px!important}}
+</style>
+</head>
+<body>
+<div class="app"><div class="window">
+<div class="titlebar"><span>Mordor — The Depths of Dejenol · PUBLIC v1.1 Browser Edition v5.0</span><span id="clock"></span></div>
+<div class="menubar" id="menu" hidden>
+<button data-go="town">City</button><button data-go="dungeon">Dungeon</button><button data-go="character">Character</button><button data-go="inventory">Objects & Spells</button><button data-go="library">Library</button><button data-go="records">Records</button><button id="saveBtn">Save File</button><button id="offlineBtn">Offline Copy</button><button id="aboutBtn">About</button>
+</div>
+<div class="main">
+<div id="status" class="status" hidden>
+<div class="box"><b id="sname">—</b><small>Selected</small></div><div class="box"><b id="srace">—</b><small>Race</small></div>
+<div class="box"><b id="sguild">—</b><small>Guild</small></div><div class="box"><b id="slvl">1</b><small>Guild Lv.</small></div>
+<div class="box"><b id="shp">0/0</b><small>Hits</small></div><div class="box"><b id="sgold">0</b><small>Gold</small></div>
+</div>
+<div id="screen"></div>
+<div class="panel"><b>Message Window</b><div id="log" class="log" aria-live="polite"></div></div>
+</div>
+<div class="footer">Unofficial non-commercial browser adaptation using the original PUBLIC v1.1 shareware data records with newly written browser code and generated corridor graphics. PUBLIC data is cached after first load; v5 aligns economy, loot, spawning, character creation and guild progression much more closely to original-derived rules; saves remain in this browser.</div>
+</div></div>
+<div class="modal" id="modal"><div class="dialog" id="dialog"></div></div>
+<script id="mordor-data" type="application/json">{"spells":[],"items":[],"monsters":[],"floors":[]}</script>
+<script>
+(async()=>{
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+window.addEventListener('error',e=>{let el=document.getElementById('log');if(el){let p=document.createElement('p');p.textContent='RUNTIME ERROR: '+(e.message||'unknown error');p.style.color='#900';el.prepend(p)}});
+window.addEventListener('unhandledrejection',e=>{let el=document.getElementById('log');if(el){let p=document.createElement('p');p.textContent='RUNTIME ERROR: '+(e.reason?.message||e.reason||'unhandled promise rejection');p.style.color='#900';el.prepend(p)}});
+const SAVE='mordor-browser-faithful-v5';
+const DATA_CACHE='mordor-public-data-v11-r2';
+const DIR=[[0,1],[1,0],[0,-1],[-1,0]], DN=['North','East','South','West'];
+const F={WE:0,WN:1,DE:2,DN:3,SE:4,SN:5,PIT:11,UP:12,DOWN:13,TELE:14,WATER:15,QUICK:16,ROT:17,ANTI:18,ROCK:19,FOG:20,CHUTE:21,STUD:22};
+const BIT=(v,n)=>(Number(v||0)&(2**n))!==0;
+async function loadPublicData(){
+ let embedded=JSON.parse(document.getElementById('mordor-data').textContent||'{"spells":[],"items":[],"monsters":[],"floors":[]}');
+ if(embedded.items?.length&&embedded.monsters?.length&&embedded.floors?.length)return embedded;
+ try{let cached=JSON.parse(localStorage.getItem(DATA_CACHE)||'null');if(cached?.items?.length&&cached?.monsters?.length&&cached?.floors?.length)return cached}catch{}
+ function extractPublicObject(t){
+  let trimmed=t.trim();
+  if(trimmed.startsWith('{'))return JSON.parse(trimmed);
+  let marker='const EMBEDDED_DATA=',a=t.indexOf(marker);
+  if(a<0)throw new Error('PUBLIC data marker missing');
+  a=t.indexOf('{',a+marker.length);
+  if(a<0)throw new Error('PUBLIC data opening brace missing');
+  let depth=0,inString=false,escape=false;
+  for(let i=a;i<t.length;i++){
+   let ch=t[i];
+   if(inString){if(escape)escape=false;else if(ch==='\\')escape=true;else if(ch==='"')inString=false;continue}
+   if(ch==='"'){inString=true;continue}
+   if(ch==='{')depth++;
+   else if(ch==='}'){depth--;if(depth===0)return JSON.parse(t.slice(a,i+1))}
+  }
+  throw new Error('PUBLIC data closing brace missing');
+ }
+ let urls=['../mordor-data/public-v11.json','https://raw.githack.com/modsandstuff/permadeath/master/mordor-data/public-v11.json','https://raw.githubusercontent.com/modsandstuff/permadeath/master/mordor-data/public-v11.json'];
+ let last=null;for(let u of urls){try{let r=await fetch(u,{cache:'no-cache'});if(!r.ok)throw new Error('HTTP '+r.status);let t=await r.text(),d=JSON.parse(t);if(d.items?.length&&d.monsters?.length&&d.floors?.length){try{localStorage.setItem(DATA_CACHE,JSON.stringify(d))}catch{}return d}throw new Error('PUBLIC data was incomplete')}catch(e){last=e}}
+ throw new Error('Could not load PUBLIC v1.1 data: '+(last?.message||last||'unknown error'))
+}
+function normalisePublicData(d){
+ if(d?._browserV5Normalised)return d;
+ for(let i of (d.items||[])){
+  if(i.typeId==null&&i.charges!=null){let raw=Number(i.charges)|0,ch=raw&65535,ty=(raw>>>16)&65535;if(ch&32768)ch-=65536;if(ty&32768)ty-=65536;i.charges=ch;i.typeId=ty;if(i.subtype==null)i.subtype=i.type}
+ }
+ d._browserV5Normalised=1;return d
+}
+document.getElementById('screen').innerHTML='<div class="panel"><h2>Loading PUBLIC v1.1 data…</h2><p>Reading the original shareware monster, object, spell and dungeon records.</p></div>';
+const PUBLIC_DATA=normalisePublicData(await loadPublicData());
+let state=null,current='roster',encounter=null,chest=null,active=0;
+
+
+const GAME=PUBLIC_DATA.game||{races:[],guilds:[],itemTypes:[],itemSubtypes:[],monsterTypes:[],monsterSubtypes:[]};
+const SIZE_NAMES=['Very Small','Small','Normal','Big','Very Big','Huge'];
+const ALIGN_NAME=['Good','Neutral','Evil'];
+function maskAlignCodes(mask){let s='';if(mask&1)s+='G';if(mask&2)s+='N';if(mask&4)s+='E';return s||'N'}
+const RACE_LIST=GAME.races||[], GUILD_LIST=GAME.guilds||[];
+const RACES=Object.fromEntries(RACE_LIST.map((r,ri)=>[r.name,{
+ age:Number(r.maxAge||100),exp:Number(r.expFactor||1),min:(r.min||[]).slice(0,6),max:(r.max||[]).slice(0,6),
+ align:maskAlignCodes(Number(r.alignment||2)),size:SIZE_NAMES[Number(r.size||2)]||'Normal',bonusPoints:Number(r.bonusPoints||0),
+ resist:r.res||[],guilds:GUILD_LIST.filter(g=>(Number(g.raceMask||0)&(1<<ri))!==0).map(g=>g.name).join(',')
+}]));
+const GUILDS=Object.fromEntries(GUILD_LIST.map(g=>[g.name,{
+ req:(g.req||[]).slice(0,6),align:maskAlignCodes(Number(g.alignment||7)),ah:Number(g.averageHits||0),max:Number(g.maxHitLevel||0),
+ hit2:Number(g.minHits||0),exp:Number(g.expFactor||1),quest:Number(g.questPercentage||0),
+ abilities:{thief:Number(g.abilityRates?.[0]||0),back:Number(g.abilityRates?.[1]||0),crit:Number(g.abilityRates?.[2]||0),swings:Number(g.abilityRates?.[3]||0),fight:Number(g.abilityRates?.[4]||0),per:Number(g.abilityRates?.[5]||0)},
+ abilityRates:g.abilityRates||[],spellMods:g.spellMods||[],spellCaps:g.spellCaps||[],raceMask:Number(g.raceMask||0),goldFactor:Number(g.goldFactor||0),
+ levelScale:Number(g.levelScale||1),attack:Number(g.attack||0),defence:Number(g.defence||0),maxADLevel:Number(g.maxADLevel||0),adRate:Number(g.adRate||0)
+}]));
+const MONSTER_TYPES=(GAME.monsterTypes||[]).map(x=>x.name||'unknown');
+const MONSTER_SUBTYPES=(GAME.monsterSubtypes||[]).map(x=>x.name||'unknown');
+
+
+const BODY_SLOT_NAMES={0:'object',1:'weapon',2:'shield',3:'torso',4:'head',5:'hands',6:'shoulders',7:'wrist',8:'sash',9:'waist',10:'foot',11:'finger',12:'neck',13:'crest'};
+const EQUIP_SLOTS=['weapon','shield','torso','head','hands','shoulders','wrist','sash','waist','foot','finger','neck','crest'];
+const STATN=['STR','INT','WIS','CON','CHA','DEX'];
+function itemAlignmentChoices(i){let a=[];if(i.alignFlags&1)a.push('Good');if(i.alignFlags&2)a.push('Neutral');if(i.alignFlags&4)a.push('Evil');return a.length?a:['Neutral']}
+function itemSlot(i){let t=GAME.itemSubtypes?.[i.subtypeId]?.itemType??i.typeId??0,e=Number(GAME.itemTypes?.[t]?.equippable??0);return BODY_SLOT_NAMES[e]||'object'}
+const ITEMS=(PUBLIC_DATA.items||[]).filter(i=>i&&i.name).map(i=>{
+ let subtypeId=Number(i.subtype??i.type??0),typeId=Number(i.typeId??GAME.itemSubtypes?.[subtypeId]?.itemType??0),typeName=GAME.itemTypes?.[typeId]?.name||'Object',subtypeName=GAME.itemSubtypes?.[subtypeId]?.name||typeName;
+ let x={id:Number(i.id),n:i.name,att:Number(i.att||0),def:Number(i.def||0),p:Math.max(0,Number(i.price||0)),floor:Number(i.floor||0),rarity:Math.max(0,Number(i.rarity||0)),abilities:Number(i.abilities||0),swings:Number(i.swings||0),special:Number(i.special||0),spellIndex:Number(i.spellIndex||0),spellId:Number(i.spellId||0),charges:Number(i.charges||0),guildMask:Number(i.guilds||0),levelScale:Number(i.scale||0),damageMod:Number(i.damage||1),alignFlags:Number(i.align||0),hands:Number(i.hands||0),subtypeId,typeId,resFlags:Number(i.resFlags||0),req:(i.req||[]).slice(0,6),mods:(i.mods||[]).slice(0,6),cursedBase:!!Number(i.cursed||0),spellLvl:Number(i.spellLvl||0),restricted:Number(i.restricted||0),t:typeName,subtype:subtypeName};x.slot=itemSlot(x);return x
+});
+const MONSTERS=(PUBLIC_DATA.monsters||[]).filter(m=>m&&m.name&&Number(m.hits||0)>0).map(m=>{
+ let subtypeId=Number(m.subtype??m.type??0),typeId=Number(GAME.monsterSubtypes?.[subtypeId]?.monsterType??0);
+ return {id:Number(m.id),n:m.name,l:Math.max(1,Number(m.found||1)),h:Math.max(1,Number(m.hits||1)),a:Number(m.att||0),d:Number(m.def||0),groups:Math.max(1,Number(m.groups||1)),ingroup:Math.max(1,Number(m.ingroup||1)),chance:Math.max(0,Number(m.chance||0)),box:(m.box||[]).map(Number),items:(m.items||[]).map(Number),itemChance:Number(m.itemChance||0),subtypeId,typeId,type:MONSTER_TYPES[typeId]||MONSTER_SUBTYPES[subtypeId]||'unknown',subtype:MONSTER_SUBTYPES[subtypeId]||'unknown',props:Number(m.props||0),special:Number(m.special||0),spellFlags:Number(m.spellFlags||0),lock:Number(m.lock||0),traps:Number(m.traps||0),align:Number(m.align||0),guildLevel:Math.max(0,Number(m.guildLevel||0)),goldFactor:Number(m.goldFactor||0),dropLevel:Number(m.dropLevel||1),damageMod:Number(m.damage||1),companionType:Number(m.companionType||0),spawnMode:Number(m.spawnMode||0),companionId:Number(m.companionId||0),size:Number(m.size||2),res:m.res||[]}
+});
+function spellKind(s){let n=(s.name||'').toLowerCase();if(n.includes('heal')||n.includes('cure wounds')||n==='cure light wounds')return'heal';if(n.includes('sleep'))return'sleep';if(n.includes('charm'))return'charm';if(n.includes('sanctuary'))return'sanctuary';if(n.includes('opening')||n.includes('unlock'))return'open';if(n.includes('protect'))return'protect';if(n.includes('detect')||n.includes('perception'))return'detect';if(n.includes('portal')||n.includes('teleport'))return'portal';if(n.includes('raise dead'))return'raise';if(n.includes('resurrect'))return'resurrect';if(n.includes('restore flesh'))return'flesh';if(n.includes('restoration'))return'restore';return'damage'}
+function spellTargetType(s){let n=(s.name||'').toLowerCase();for(let t of ['animal','insect','humanoid','undead','giant','demon','devil','elemental','dragon'])if(n.includes(t))return t;return null}
+const SPELLS=(PUBLIC_DATA.spells||[]).filter(s=>s&&s.name).map(s=>({id:Number(s.id),n:s.name,l:Math.max(1,Number(s.level||1)),baseCost:Math.max(0,Number(s.cost||0)),k:spellKind(s),p:Math.max(2,Math.abs(Number(s.d1||0))+Math.abs(Number(s.d2||0))),types:spellTargetType(s),cat:Number(s.cat||0),effect:Number(s.effect||0),resist:Number(s.resist||0),req:(s.req||[]).slice(0,6),raw:s}));
+const FLOORS=PUBLIC_DATA.floors||[];
+function rand(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function weightedChoice(arr,weight){let total=arr.reduce((s,x)=>s+Math.max(0,Number(weight(x)||0)),0);if(!arr.length)return null;if(total<=0)return arr[rand(0,arr.length-1)];let r=Math.random()*total;for(let x of arr){r-=Math.max(0,Number(weight(x)||0));if(r<=0)return x}return arr[arr.length-1]}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function log(t){let p=document.createElement('p');p.textContent='› '+t;$('#log').prepend(p);while($('#log').children.length>55)$('#log').lastChild.remove()}
+function guildLevel(c,g=c.activeGuild){return c.guilds[g]||0}
+function allGuildLevel(c){return Math.max(1,...Object.values(c.guilds))}
+function manaMax(c){return Math.max(0,(Number(c.stats?.[1]||0)+Number(c.stats?.[2]||0))*5)}
+function aliveParty(){return state.party.filter(c=>!c.dead&&!c.stoned)}
+function sel(){return state.party[active]||state.party[0]}
+function ability(c,k){let idx={thief:0,back:1,crit:2,swings:3,fight:4,per:5}[k];if(idx==null)return 0;let best=0;for(let [g,l] of Object.entries(c.guilds||{})){let rate=Number(GUILDS[g]?.abilityRates?.[idx]||0);best=Math.max(best,Math.floor(rate*Number(l||0)))}return best}
+function alignCode(a){return a==='Good'?'G':a==='Evil'?'E':'N'}
+function alignOpposed(a,b){return (a==='Good'&&b==='Evil')||(a==='Evil'&&b==='Good')}
+function ageYears(c){return Math.floor((c.ageWeeks||936)/52)}
+function addAge(c,weeks){c.ageWeeks=(c.ageWeeks||936)+weeks;let lim=RACES[c.race]?.age||100,yrs=ageYears(c);if(yrs>=lim&&Math.random()<Math.min(.65,.02+(yrs-lim)*.02)){c.dead=true;c.deathCause='old age';c.hp=0;log(c.name+' dies of old age at '+yrs+'.')}}
+function newUid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function objectInstance(i,known=false){let choices=itemAlignmentChoices(i),al=(i.alignFlags===7||choices.length===3)?'Unaligned':choices[rand(0,choices.length-1)];return{uid:newUid(),id:i.id,idLevel:known?3:0,known:!!known,align:al,cursed:!!i.cursedBase,stuck:false,qty:1,charges:i.charges||0}}
+function equippedObj(c,slot){let r=c.eq?.[slot];if(!r)return null;if(typeof r==='object')return r;return c.inv.find(o=>o.uid===r)||c.inv.find(o=>o.id===r)||null}
+function equippedName(c,slot){let o=equippedObj(c,slot);return o?(ITEMS.find(i=>i.id===o.id)?.n||'—'):'—'}
+function itemName(o){let i=ITEMS.find(q=>q.id===o.id);if(!i)return 'Unknown Object';let idl=Number(o.idLevel??(o.known?3:0));if(idl<3)return idl===0?'Unknown Object':idl===1?'Partly Identified Object':'Mostly Identified '+(i.t||'Object');return i.n+(o.qty>1?' ×'+o.qty:'')}
+function itemEffectScale(c,o){if(!o.align||o.align==='Unaligned'||o.align===c.align)return 1;if(c.align==='Neutral')return .5;if(alignOpposed(c.align,o.align))return -1;return 1}
+function gear(c){let a=0,d=0;Object.values(c.eq||{}).forEach(ref=>{let o=typeof ref==='object'?ref:c.inv.find(x=>x.uid===ref)||c.inv.find(x=>x.id===ref);if(!o)return;let i=ITEMS.find(q=>q.id===o.id);if(i){let k=itemEffectScale(c,o);a+=Math.round((i.att||0)*k);d+=Math.round((i.def||0)*k)}});return{a,d}}
+
+function xpTargetForLevel(c,g,currentLevel){let gd=GUILDS[g],rf=Number(RACES[c.race]?.exp||1),gf=Number(gd?.exp||1),level=Math.max(1,Number(currentLevel||1)),actualRace=rf+1,i=level*level*gf*250/3,j=(level*2-1)*344,k=Math.log(actualRace)/Math.log(actualRace+1),l=actualRace/25;return Math.max(0,Math.round((i+j-2)*(k+l+.3)/10))}
+function xpNeed(c,g=c.activeGuild){return xpTargetForLevel(c,g,guildLevel(c,g))}
+function xpPin(c,g=c.activeGuild){return Math.max(xpNeed(c,g),xpTargetForLevel(c,g,Math.min(998,guildLevel(c,g)+1))-1)}
+function levelGold(c,g=c.activeGuild){let l=guildLevel(c,g),gf=Number(GUILDS[g]?.goldFactor||0),i=l*l*30.1,j=l/10,k=gf/10;return Math.max(0,Math.floor(Math.floor(i+j)*(k+1)))}
+function activeXp(c){return Number(c.guildXp?.[c.activeGuild]||0)}
+function awardCombatXp(c,hits,monsterGuildLevel,playerDamage=true){if(!c||c.dead||hits<=0)return 0;c.guildXp||={};let g=c.activeGuild,l=Math.max(1,guildLevel(c,g)),h=Math.max(1,Number(hits)),comp=playerDamage?1:.25,party=Math.max(1,aliveParty().length),raw=h*(9-Math.log(h+1))*(20-Math.log(h))*(Number(monsterGuildLevel||0)+50)*comp*l/1000,gain=Math.max(0,Math.floor(raw*(1-(party-1)*.04))),cap=xpPin(c,g);c.guildXp[g]=Math.min(cap,Number(c.guildXp[g]||0)+gain);c.totalXp=(c.totalXp||0)+gain;return gain}
+function joinCost(g){let gd=GUILDS[g];if(!gd)return 0;let skillCount=(gd.abilityRates||[]).filter(v=>Math.abs(Number(v||0))<.001).length+1,spellCount=(gd.spellCaps||[]).reduce((n,v)=>n+Math.max(0,Number(v||0))/3,0),v=skillCount*1.25+spellCount;return Math.max(0,Math.floor(v*v*5536))}
+function questDone(c){return !c.quest||c.quest.done}
+function maybeQuest(c){let gd=GUILDS[c.activeGuild],l=guildLevel(c);if(l<5||Math.random()*100>Number(gd.quest||0)){c.quest=null;return}if(Math.random()<.06){c.quest=null;log('The Questmaster lets '+c.name+' off the hook.');return}let maxLevel=Math.min(10,Math.floor(l/25)),monsterQuest=l<15||Math.random()>.25;if(monsterQuest){let pool=MONSTERS.filter(m=>m.l<=Math.max(1,maxLevel||1)&&m.chance>0),m=pool.length?pool[rand(0,pool.length-1)]:MONSTERS[0];c.quest={guild:c.activeGuild,type:'kill',target:m.n,need:1,have:0,done:false}}else{let lvl=Math.max(1,Math.floor(maxLevel/1.5)+1),pool=ITEMS.filter(i=>i.p>100&&i.floor>0&&i.floor<=lvl&&!i.cursedBase),it=pool.length?pool[rand(0,pool.length-1)]:ITEMS.find(i=>i.floor>0&&!i.cursedBase);if(it)c.quest={guild:c.activeGuild,type:'item',target:it.id,done:false}}if(c.quest)log(c.name+' is assigned a '+c.activeGuild+' guild quest.')}
+function progressKill(name){for(let c of state.party){let q=c.quest;if(q&&!q.done&&q.type==='kill'&&q.target===name){q.have++;if(q.have>=q.need){q.done=true;log(c.name+' completes a guild quest.')}}}}
+function progressItem(id){for(let c of state.party){let q=c.quest;if(q&&!q.done&&q.type==='item'&&q.target===id){q.done=true;log(c.name+' finds the item required by the '+q.guild+' guild.')}}}
+function save(){if(state){localStorage.setItem(SAVE,JSON.stringify(state));stats()}}
+function load(){try{return JSON.parse(localStorage.getItem(SAVE)||'null')}catch{return null}}
+
+function floorAt(z=state?.z){return FLOORS[z]||null}
+function field(z=state.z,x=state.x,y=state.y){let f=FLOORS[z];if(!f||x<0||y<0||x>=f.w||y>=f.h)return null;return f.fields[y*f.w+x]||null}
+function tile(z,x,y){let q=field(z,x,y);if(!q||BIT(q.flags,F.ROCK))return 1;if(BIT(q.flags,F.UP))return 2;if(BIT(q.flags,F.DOWN))return 3;return 0}
+function feature(z=state.z,x=state.x,y=state.y){let q=field(z,x,y);if(!q)return null;let flags=q.flags;if(BIT(flags,F.ROT))return{type:'rot'};if(BIT(flags,F.PIT))return{type:'pit'};if(BIT(flags,F.TELE))return{type:'tele'};if(BIT(flags,F.WATER))return{type:'water'};if(BIT(flags,F.QUICK))return{type:'sand'};if(BIT(flags,F.ANTI))return{type:'anti'};if(BIT(flags,F.FOG))return{type:'fog'};if(BIT(flags,F.CHUTE))return{type:'chute'};if(BIT(flags,F.STUD))return{type:'stud'};return null}
+function pass(z,x,y){let q=field(z,x,y);return !!q&&!BIT(q.flags,F.ROCK)}
+function key(z=state.z,x=state.x,y=state.y){return z+','+x+','+y}
+function borderKey(z,x,y,d){return z+','+x+','+y+','+d}
+function blocked(z,x,y,d){let f=FLOORS[z],dx=DIR[d][0],dy=DIR[d][1],nx=x+dx,ny=y+dy;if(!f||nx<0||ny<0||nx>=f.w||ny>=f.h)return true;let a=field(z,x,y),b=field(z,nx,ny);if(!a||!b||BIT(b.flags,F.ROCK))return true;if(d===0){if(BIT(a.flags,F.SN)&&!state.discovered[borderKey(z,x,y,d)])return true;return BIT(a.flags,F.WN)&&!BIT(a.flags,F.DN)}if(d===1){if(BIT(a.flags,F.SE)&&!state.discovered[borderKey(z,x,y,d)])return true;return BIT(a.flags,F.WE)&&!BIT(a.flags,F.DE)}if(d===2){if(BIT(b.flags,F.SN)&&!state.discovered[borderKey(z,nx,ny,0)])return true;return BIT(b.flags,F.WN)&&!BIT(b.flags,F.DN)}if(d===3){if(BIT(b.flags,F.SE)&&!state.discovered[borderKey(z,nx,ny,1)])return true;return BIT(b.flags,F.WE)&&!BIT(b.flags,F.DE)}return false}
+function hasDoor(z,x,y,d){let dx=DIR[d][0],dy=DIR[d][1],nx=x+dx,ny=y+dy,a=field(z,x,y),b=field(z,nx,ny);if(!a||!b)return false;if(d===0)return BIT(a.flags,F.DN);if(d===1)return BIT(a.flags,F.DE);if(d===2)return BIT(b.flags,F.DN);if(d===3)return BIT(b.flags,F.DE);return false}
+function findStart(z=0){let f=FLOORS[z];if(!f)return{x:0,y:0};for(let y=0;y<f.h;y++)for(let x=0;x<f.w;x++){let q=f.fields[y*f.w+x];if(BIT(q.flags,F.UP))return{x,y}}for(let y=0;y<f.h;y++)for(let x=0;x<f.w;x++)if(pass(z,x,y))return{x,y};return{x:0,y:0}}
+function nearestOpen(z,x,y){let f=FLOORS[z];if(!f)return{x:0,y:0};if(pass(z,x,y))return{x,y};let best=null,bd=1e9;for(let yy=0;yy<f.h;yy++)for(let xx=0;xx<f.w;xx++)if(pass(z,xx,yy)){let d=Math.abs(xx-x)+Math.abs(yy-y);if(d<bd){bd=d;best={x:xx,y:yy}}}return best||{x:0,y:0}}
+function rollStats(race){let r=RACES[race];return r.min.map((v,i)=>Math.min(r.max[i],v+5))}
+function eligible(c,g){
+ let d=GUILDS[g];if(!RACES[c.race].guilds.split(',').includes(g))return false;
+ let A=alignCode(c.align);if(!d.align.includes(A))return false;
+ return d.req.every((v,i)=>c.stats[i]>=v)
+}
+function makeChar(name,race,align,gender,stats){
+ let eq=Object.fromEntries(EQUIP_SLOTS.map(x=>[x,null]));
+ let c={id:Date.now()+Math.random(),name:name||'Adventurer',gender,race,align,stats:stats.slice(),ageWeeks:18*52,guilds:{Nomad:1},activeGuild:'Nomad',guildXp:{Nomad:0},totalXp:0,quest:null,gold:1500,bank:0,bankItems:[],storeSeen:{},
+ hp:15,maxHp:15,mana:0,maxMana:0,dead:false,stoned:false,deathCause:null,lost:null,status:{},inv:[],eq,companions:[],kills:0,knownMon:{},knownItem:{}};
+ c.maxMana=manaMax(c);c.mana=c.maxMana;return c
+}
+function normalize(){
+ state.party||=[];state.roster||=state.party;state.storeStock||={};state.z=Math.max(0,Math.min(FLOORS.length-1,state.z??0));state.x??=findStart(state.z).x;state.y??=findStart(state.z).y;state.dir??=0;state.explored||={};state.discovered||={};let np=nearestOpen(state.z,state.x,state.y);state.x=np.x;state.y=np.y;state.sanctuary||={z:0,x:findStart(0).x,y:findStart(0).y};
+ for(let c of state.party){
+  c.gender||='Male';c.ageWeeks??=18*52;c.guilds||={Nomad:1};if(!c.guilds.Nomad)c.guilds.Nomad=1;c.activeGuild||='Nomad';c.guildXp||={};for(let g of Object.keys(c.guilds))c.guildXp[g]??=0;c.totalXp??=0;c.quest??=null;c.gold??=1500;c.bank??=0;
+  c.inv=(c.inv||[]).map(v=>{if(typeof v==='number'){let i=ITEMS.find(x=>x.id===v);return i?objectInstance(i,true):null}let o=v||{};o.uid||=newUid();o.idLevel??=(o.known?3:0);o.known=o.idLevel>=3;o.align??='Unaligned';o.cursed??=false;o.stuck??=false;o.qty??=1;o.charges??=ITEMS.find(i=>i.id===o.id)?.charges||0;return o}).filter(Boolean).slice(0,40);
+  let oldEq=c.eq||{};c.eq=Object.fromEntries(EQUIP_SLOTS.map(x=>[x,null]));for(let [slot,r] of Object.entries(oldEq)){let o=typeof r==='object'?c.inv.find(x=>x.uid===r.uid)||c.inv.find(x=>x.id===r.id):c.inv.find(x=>x.uid===r)||c.inv.find(x=>x.id===r);if(o&&slot in c.eq)c.eq[slot]=o.uid}
+  c.bankItems=(c.bankItems||[]).map(o=>{o.uid||=newUid();o.idLevel??=(o.known?3:0);o.known=o.idLevel>=3;o.align??='Unaligned';o.cursed??=false;o.stuck??=false;o.qty??=1;return o}).slice(0,40);c.companions=(c.companions||[]).slice(0,4);for(let m of c.companions)m.bind??=1;c.knownMon||={};c.knownItem||={};c.status||={};c.stoned??=false;c.maxHp??=15;c.hp=Math.min(c.maxHp,c.hp??c.maxHp);c.maxMana=manaMax(c);c.mana=Math.min(c.maxMana,c.mana??c.maxMana)
+ }
+}
+function stats(){
+ if(!state||!state.party.length)return;let c=sel();$('#status').hidden=false;$('#sname').textContent=c.name;$('#srace').textContent=c.race;$('#sguild').textContent=c.activeGuild;$('#slvl').textContent=guildLevel(c);$('#shp').textContent=(c.dead?'DEAD':c.hp+'/'+c.maxHp);$('#sgold').textContent=c.gold
+}
+function partyHTML(){
+ return `<div class="panel partyPanel"><h3>Party</h3>${state.party.map((c,i)=>`<div class="partycard ${i===active?'active':''} ${c.dead?'dead':''}" data-p="${i}"><b>${i+1}. ${esc(c.name)}</b><span class="tiny">${c.race} ${c.activeGuild} ${guildLevel(c)} · ${c.dead?'DEAD':c.hp+'/'+c.maxHp+' hits'}</span></div>`).join('')}<button id="addChar"${state.party.length>=4?' disabled':''}>Add Character</button></div>`
+}
+function bindParty(){ $$('[data-p]').forEach(x=>x.onclick=()=>{active=+x.dataset.p;stats();renderCurrent()});let a=$('#addChar');if(a)a.onclick=()=>creation(true) }
+function setup(){
+ $('#menu').hidden=true;$('#status').hidden=true;
+ $('#screen').innerHTML=`<div class="panel"><h2>Adventurers of Marlith</h2><p>Create one to four characters, then form a party and enter the Depths.</p><button id="new">Create First Character</button></div>`;
+ $('#new').onclick=()=>creation(false)
+}
+function creation(add){
+ let races=Object.keys(RACES).map(x=>`<option>${x}</option>`).join('');
+ $('#screen').innerHTML=`<div class="panel"><h2>Create Character</h2><label>Name<input class="wininput" id="cn" value="Merlin" maxlength="20"></label><div class="grid2"><label>Sex<select class="wininput" id="sex"><option>Male</option><option>Female</option></select></label><label>Race<select class="wininput" id="cr">${races}</select></label></div><label>Alignment<select class="wininput" id="ca"></select></label><div class="notice"><b>Starting Guild: Nomad, level 1</b><br><span class="tiny">New characters begin with 1,500 gold, 15 hits and no free equipment.</span></div><div id="roll" class="notice"></div><div class="grid2"><button id="resetStats">Reset Stats</button><button id="create">Create</button></div></div>`;
+ let vals=[],base=[],left=0;
+ function aligns(){let codes=RACES[$('#cr').value].align,el=$('#ca');el.innerHTML=[['G','Good'],['N','Neutral'],['E','Evil']].filter(x=>codes.includes(x[0])).map(x=>`<option>${x[1]}</option>`).join('')}
+ function reset(){let r=RACES[$('#cr').value];base=r.min.map((v,i)=>Math.min(r.max[i],v+5));vals=base.slice();left=Math.max(0,r.bonusPoints||0);draw()}
+ function draw(){let r=RACES[$('#cr').value];$('#roll').innerHTML=`<b>Stat points remaining: ${left}</b><div class="statalloc">${STATN.map((n,i)=>`<div class="row"><span><b>${n}</b> ${vals[i]} <span class="tiny">(race ${r.min[i]}–${r.max[i]})</span></span><span><button data-minus="${i}"${vals[i]<=base[i]?' disabled':''}>−</button><button data-plus="${i}"${left<=0||vals[i]>=r.max[i]?' disabled':''}>+</button></span></div>`).join('')}</div>`;$$('[data-plus]').forEach(b=>b.onclick=()=>{let i=+b.dataset.plus;if(left>0&&vals[i]<r.max[i]){vals[i]++;left--;draw()}});$$('[data-minus]').forEach(b=>b.onclick=()=>{let i=+b.dataset.minus;if(vals[i]>base[i]){vals[i]--;left++;draw()}})}
+ aligns();reset();$('#resetStats').onclick=reset;$('#cr').onchange=()=>{aligns();reset()};
+ $('#create').onclick=()=>{if(left>0&&!confirm('You still have '+left+' stat point'+(left===1?'':'s')+' unspent. Create anyway?'))return;let c=makeChar($('#cn').value.trim(),$('#cr').value,$('#ca').value,$('#sex').value,vals);if(!state)state={party:[],roster:[],town:true,z:0,x:1,y:1,dir:1,explored:{},discovered:{},sanctuary:{z:0,x:1,y:1},steps:0,storeStock:{}};state.party.push(c);state.roster.push(c);active=state.party.length-1;$('#menu').hidden=false;log(c.name+' enters Marlith as a level 1 Nomad with 1,500 gold.');save();town()}
+}
+function renderCurrent(){if(current==='town')town();else if(current==='dungeon')dungeon();else if(current==='character')character();else if(current==='inventory')inventory();else if(current==='library')library();else if(current==='records')records()}
+function show(s){current=s;stats();if(s==='town')town();if(s==='dungeon')dungeon();if(s==='character')character();if(s==='inventory')inventory();if(s==='library')library();if(s==='records')records();save()}
+
+function town(){
+ current='town';state.town=true;encounter=null;chest=null;
+ $('#screen').innerHTML=`<div class="layout">${partyHTML()}<div><div class="panel"><h2>City of Marlith</h2><p>The city is your haven between expeditions. The stairway to the old mines lies below the guild quarter.</p><div class="townGrid">
+ <button id="store"><b>General Store</b><br><span class="tiny">Buy, sell, identify, align and uncurse</span></button>
+ <button id="conf"><b>Confinement & Holding</b><br><span class="tiny">Buy, sell and bind creatures</span></button>
+ <button id="guild"><b>City Guilds</b><br><span class="tiny">Make levels, join guilds, visit library</span></button>
+ <button id="bank"><b>Bank</b><br><span class="tiny">Secure gold and objects</span></button>
+ <button id="morgue"><b>Morgue</b><br><span class="tiny">Recover and resurrect fallen adventurers</span></button>
+ <button id="seer"><b>Seer</b><br><span class="tiny">Pay for uncertain information</span></button>
+ <button id="dungeonGo"><b>Enter the Dungeon</b><br><span class="tiny">Descend to PUBLIC level 1</span></button>
+ <button id="rest"><b>Rest</b><br><span class="tiny">Restore hits and spell points</span></button>
+ </div></div></div><div class="rightPanel"><div class="panel"><h3>Selected Character</h3>${charSummary(sel())}</div></div></div>`;
+ bindParty();$('#store').onclick=store;$('#conf').onclick=confinement;$('#guild').onclick=guildHall;$('#bank').onclick=bank;$('#morgue').onclick=morgue;$('#seer').onclick=seer;
+ $('#rest').onclick=()=>{for(let c of aliveParty()){c.hp=c.maxHp;c.mana=c.maxMana}log('The party rests in Marlith.');save();town()};
+ $('#dungeonGo').onclick=()=>{if(!aliveParty().length)return alert('No living party members.');state.town=false;state.z=0;let s=findStart(0);state.x=s.x;state.y=s.y;state.dir=0;mark();log('The party enters the Depths of Dejenol.');show('dungeon')}
+}
+function charSummary(c){let q=c.quest;return `<b>${esc(c.name)}</b><br>${c.gender} ${c.race} · ${c.align}<br>Age ${ageYears(c)} / ~${RACES[c.race].age}<br>${Object.entries(c.guilds).map(([g,l])=>g+' '+l).join(', ')}<div class="sep"></div>STR ${c.stats[0]} · INT ${c.stats[1]} · WIS ${c.stats[2]}<br>CON ${c.stats[3]} · CHA ${c.stats[4]} · DEX ${c.stats[5]}<br>${c.activeGuild} XP ${activeXp(c)}/${xpNeed(c)} · Total XP ${c.totalXp}<br>Gold ${c.gold} · Bank ${c.bank}${q?`<div class="notice"><b>${q.guild} Quest:</b> ${q.type==='kill'?'Kill '+q.need+' '+q.target+' ('+q.have+'/'+q.need+')':'Find '+(ITEMS.find(i=>i.id===q.target)?.n||'an item')} ${q.done?'✓':''}</div>`:''}` }
+function ensureStoreStock(){state.storeStock||={};for(let i of ITEMS.filter(x=>x.floor===-1)){let k=String(i.id);if(state.storeStock[k]==null)state.storeStock[k]=99}}
+function stockCount(i){ensureStoreStock();return state.storeStock[String(i.id)]||0}
+function buyPrice(i){let n=stockCount(i);if(i.floor===-1)return i.p;let count=Math.min(10,n),cost=i.p*(1-(.075*count))*1.25;return Math.max(1,Math.floor(cost))}
+function sellValue(o){let i=ITEMS.find(x=>x.id===o.id);if(!i)return 0;if(o.idLevel>=3&&o.cursed)return 1;let base=.75*i.p*((Math.min(3,Math.max(0,o.idLevel))+1)/4),existing=stockCount(i);if(i.floor!==-1)base*=1/(existing+1);return Math.max(1,Math.floor(base))}
+function store(){
+ let c=sel();ensureStoreStock();let available=ITEMS.filter(i=>stockCount(i)>0).sort((a,b)=>a.p-b.p).slice(0,100);
+ modal(`<h2>General Store</h2><p>${esc(c.name)} has <b>${c.gold}</b> gold on hand.</p><div class="tabs"><button class="active" id="buyTab">Buy</button><button id="sellTab">Sell / ID</button><button id="alignTab">Align</button><button id="uncurseTab">Uncurse</button></div><div id="storeList"></div><button data-close>Close</button>`);
+ const list=$('#storeList');
+ const drawBuy=()=>{list.innerHTML=available.map(i=>`<div class="row"><span><b>${i.n}</b><br><span class="tiny">${i.subtype} · ${stockCount(i)>=90?'stock item':stockCount(i)+' in stock'} · A/D ${i.att}/${i.def}</span></span><button data-buy="${i.id}">${buyPrice(i)}g</button></div>`).join('')||'<p>The store has no stock.</p>';$$('[data-buy]').forEach(b=>b.onclick=()=>{let i=ITEMS.find(x=>x.id==b.dataset.buy),fee=buyPrice(i);if(c.gold<fee)return alert('Not enough gold.');if(c.inv.length>=40)return alert('You can carry at most 40 objects.');c.gold-=fee;if(i.floor!==-1)state.storeStock[String(i.id)]=Math.max(0,stockCount(i)-1);let o=objectInstance(i,true);c.inv.push(o);c.knownItem[i.id]=1;log(c.name+' buys '+i.n+' for '+fee+' gold.');save();close();store()})};drawBuy();
+ $('#buyTab').onclick=drawBuy;
+ $('#sellTab').onclick=()=>{list.innerHTML=c.inv.map((o,idx)=>{let i=ITEMS.find(x=>x.id===o.id),idc=identifyCost(o);return `<div class="row"><span><b>${itemName(o)}</b><br><span class="tiny">ID ${o.idLevel}/3 · sell ${sellValue(o)}g${o.idLevel>=3&&o.cursed?' · CURSED':''}</span></span><span><button data-id="${idx}"${o.idLevel>=3?' disabled':''}>ID ${idc}g</button> <button data-sell="${idx}">Sell</button></span></div>`}).join('')||'<p>Nothing carried.</p>';$$('[data-id]').forEach(b=>b.onclick=()=>{let o=c.inv[+b.dataset.id],fee=identifyCost(o);if(c.gold<fee)return alert('Not enough gold.');c.gold-=fee;o.idLevel=Math.min(3,o.idLevel+1);o.known=o.idLevel>=3;if(o.known)c.knownItem[o.id]=1;log(c.name+' pays '+fee+' gold to identify an object'+(o.known?' completely.':'.'));save();$('#sellTab').click()});$$('[data-sell]').forEach(b=>b.onclick=()=>{let idx=+b.dataset.sell,o=c.inv[idx];if(Object.values(c.eq).includes(o.uid))return alert('Unequip it first.');let i=ITEMS.find(x=>x.id===o.id),v=sellValue(o);c.gold+=v;if(!(o.cursed&&o.idLevel>=3)){state.storeStock[String(i.id)]=Math.min(10,stockCount(i)+1)}c.inv.splice(idx,1);log(c.name+' sells '+itemName(o)+' for '+v+' gold.');save();$('#sellTab').click()})};
+ $('#alignTab').onclick=()=>{list.innerHTML=c.inv.map((o,idx)=>{let i=ITEMS.find(x=>x.id===o.id),fee=realignCost(o),opts=itemAlignmentChoices(i);return `<div class="row"><span>${itemName(o)}<br><span class="tiny">${o.idLevel>=3?'alignment '+o.align:'identify completely first'}</span></span><span>${opts.map(a=>`<button data-al="${idx}" data-a="${a}"${o.idLevel<3||o.align===a?' disabled':''}>${a} ${fee}g</button>`).join('')}</span></div>`}).join('');$$('[data-al]').forEach(b=>b.onclick=()=>{let o=c.inv[+b.dataset.al],fee=realignCost(o);if(c.gold<fee)return alert('Not enough gold.');c.gold-=fee;o.align=b.dataset.a;log(itemName(o)+' is realigned to '+o.align+'.');save();$('#alignTab').click()})};
+ $('#uncurseTab').onclick=()=>{list.innerHTML=c.inv.map((o,idx)=>{let fee=uncurseCost(o);return `<div class="row"><span>${itemName(o)}<br><span class="tiny">${o.idLevel<3?'identify completely first':(o.cursed?'CURSED':'not cursed')}</span></span><button data-uc="${idx}"${o.idLevel<3||!o.cursed?' disabled':''}>Uncurse ${fee}g</button></div>`}).join('');$$('[data-uc]').forEach(b=>b.onclick=()=>{let o=c.inv[+b.dataset.uc],fee=uncurseCost(o);if(c.gold<fee)return alert('Not enough gold.');c.gold-=fee;o.cursed=false;o.stuck=false;for(let slot of Object.keys(c.eq))if(c.eq[slot]===o.uid)c.eq[slot]=null;log('The curse is removed and the item is returned to inventory.');save();$('#uncurseTab').click()})}
+}
+function identifyCost(o){return Math.max(1,Math.floor(sellValue(o)*.25))}
+function uncurseCost(o){let i=ITEMS.find(x=>x.id===o.id);return i?Math.max(1,Math.floor(i.p*1.6)):0}
+function realignCost(o){let i=ITEMS.find(x=>x.id===o.id);return i?Math.max(1,Math.floor(i.p*.4)):0}
+function canEquipItem(c,i){if(!i||i.slot==='object')return false;if((i.req||[]).some((v,idx)=>Number(v||0)>Number(c.stats[idx]||0)))return false;let gi=GUILD_LIST.findIndex(g=>g.name===c.activeGuild);if(gi<0)return false;if(i.guildMask&&((i.guildMask&(1<<gi))===0))return false;if(i.levelScale>0&&guildLevel(c,c.activeGuild)<i.levelScale)return false;return true}
+
+function bank(){
+ let c=sel();modal(`<h2>Bank</h2><p>On hand: <b>${c.gold}</b> · Account: <b>${c.bank}</b></p><label>Gold amount<input class="wininput" id="amt" type="number" min="0" value="${c.gold}"></label><div class="grid2"><button id="dep">Deposit Gold</button><button id="with">Withdraw Gold</button></div><h3>Stored Objects</h3><div id="bankList"></div><button data-close>Close</button>`);
+ const redraw=()=>{$('#bankList').innerHTML='<b>Carried</b>'+c.inv.map((o,i)=>`<div class="row"><span>${itemName(o)}</span><button data-di="${i}">Deposit</button></div>`).join('')+'<b>Bank</b>'+c.bankItems.map((o,i)=>`<div class="row"><span>${itemName(o)}</span><button data-wi="${i}">Withdraw</button></div>`).join('');$$('[data-di]').forEach(b=>b.onclick=()=>{let idx=+b.dataset.di,o=c.inv[idx];if(Object.values(c.eq).includes(o.uid))return alert('Unequip it first.');if(c.bankItems.length>=40)return alert('The bank can hold at most 40 items.');c.bankItems.push(c.inv.splice(idx,1)[0]);save();redraw()});$$('[data-wi]').forEach(b=>b.onclick=()=>{if(c.inv.length>=40)return alert('You can carry at most 40 items.');c.inv.push(c.bankItems.splice(+b.dataset.wi,1)[0]);save();redraw()})};redraw();
+ $('#dep').onclick=()=>{let n=Math.min(c.gold,Math.max(0,+$('#amt').value||0));c.gold-=n;c.bank+=n;save();close();bank()};$('#with').onclick=()=>{let n=Math.min(c.bank,Math.max(0,+$('#amt').value||0));c.bank-=n;c.gold+=n;save();close();bank()}
+}
+function guildHall(){
+ let c=sel(),g=c.activeGuild,need=xpNeed(c,g),xp=activeXp(c),fee=levelGold(c,g),joined=Object.keys(c.guilds),join=Object.keys(GUILDS).filter(x=>!c.guilds[x]&&eligible(c,x));let q=c.quest,questBlock=q?`<div class="notice"><b>${q.guild} Quest:</b> ${q.type==='kill'?'Kill '+q.target+(q.done?' ✓ COMPLETE':''):'Find '+(ITEMS.find(i=>i.id===q.target)?.n||'item')+(q.done?' ✓ COMPLETE':'')}</div>`:'';
+ modal(`<h2>City Guilds</h2><p><b>${g}</b> level ${guildLevel(c,g)} · guild XP ${xp}/${need} · pin ${xpPin(c,g)}</p>${questBlock}<button id="level"${xp<need||c.gold<fee||!questDone(c)?' disabled':''}>Make Level (${fee} gold)</button><h3>Joined Guilds</h3>${joined.map(x=>`<div class="row"><span>${x} level ${c.guilds[x]} · XP ${c.guildXp[x]||0}</span><button data-active="${x}">${x===g?'Active':'Act as '+x}</button></div>`).join('')}<h3>Guilds You May Join</h3>${join.map(x=>{let cost=joined.length<2?0:joinCost(x);return `<div class="row"><span>${x}<br><span class="tiny">Requires ${GUILDS[x].req.join('/')}</span></span><button data-join="${x}" data-cost="${cost}">Join ${cost?cost+'g':'FREE'}</button></div>`}).join('')||'<p class="tiny">None currently available.</p>'}<button id="lib">Library</button> <button data-close>Close</button>`);
+ $('#level').onclick=()=>{if(c.gold<fee||activeXp(c)<need||!questDone(c))return;let otherMax=Math.max(0,...Object.entries(c.guilds).filter(([n])=>n!==g).map(([,l])=>Number(l||0)));c.gold-=fee;c.guilds[g]++;let gd=GUILDS[g],newL=guildLevel(c,g),inc=0;if(newL>otherMax){if(newL<=gd.max){let bonusMax=Math.max(0,Number(c.stats[3]||0)-16);inc=Math.max(1,Number(gd.ah||1)+rand(0,bonusMax))}else inc=Math.max(1,Number(gd.hit2||1));c.maxHp+=inc;c.hp+=inc}c.maxMana=manaMax(c);c.mana=Math.min(c.maxMana,c.mana);c.quest=null;maybeQuest(c);log(c.name+' makes '+g+' level '+newL+', pays '+fee+' gold'+(inc?' and gains '+inc+' hits.':'. No hits are gained because another guild is already at least that level.'));save();close();guildHall()};
+ $$('[data-active]').forEach(b=>b.onclick=()=>{c.activeGuild=b.dataset.active;save();close();guildHall()});$$('[data-join]').forEach(b=>b.onclick=()=>{let ng=b.dataset.join,cost=+b.dataset.cost;if(c.gold<cost)return alert('Not enough gold.');c.gold-=cost;c.guilds[ng]=1;c.guildXp[ng]=0;c.activeGuild=ng;log(c.name+' joins the '+ng+' guild'+(cost?' for '+cost+' gold':' without a fee')+'.');save();close();guildHall()});$('#lib').onclick=()=>{close();show('library')}
+}
+function confinement(){
+ let c=sel(),forSale=MONSTERS.filter(m=>m.l<=Math.max(1,allGuildLevel(c)/4+1)).slice(0,8);modal(`<h2>Confinement & Holding</h2><h3>Your Companions</h3>${c.companions.map((m,i)=>`<div class="row"><span><b>${m.n}</b><br><span class="tiny">bind ${m.bind}% · ${m.hp} hits</span></span><span><button data-bind="${i}">Re-bind</button> <button data-sellm="${i}">Sell</button></span></div>`).join('')||'<p>No companions.</p>'}<h3>Creatures for Sale</h3>${forSale.map((m,i)=>`<div class="row"><span>${m.n}</span><button data-buym="${i}">Buy ${m.l*35+40}g</button></div>`).join('')}<button data-close>Close</button>`);
+ $$('[data-sellm]').forEach(b=>b.onclick=()=>{let m=c.companions.splice(+b.dataset.sellm,1)[0],v=m.l*18+10;c.gold+=v;log(c.name+' sells '+m.n+'.');save();close();confinement()});$$('[data-bind]').forEach(b=>b.onclick=()=>{let m=c.companions[+b.dataset.bind],fee=m.l*25+25;if(c.gold<fee)return alert('Re-binding costs '+fee+' gold.');c.gold-=fee;if(Math.random()<.85)m.bind=Math.min(100,m.bind+rand(25,50));log('The keepers reinforce '+m.n+"'s binding.");save();close();confinement()});$$('[data-buym]').forEach(b=>b.onclick=()=>{let m=forSale[+b.dataset.buym],fee=m.l*35+40;if(c.gold<fee)return alert('Not enough gold.');c.gold-=fee;c.companions.push({n:m.n,l:m.l,hp:m.h,a:m.a,d:m.d,type:m.type,bind:85});save();close();confinement()})
+}
+function morgue(){
+ let dead=state.party.filter(c=>c.dead);modal(`<h2>Morgue</h2>${dead.map(c=>{let fee=Math.max(25,50*allGuildLevel(c)),lost=c.lost;return `<div class="row"><span>${esc(c.name)}<br><span class="tiny">${c.deathCause||'dead'} · ${lost?'body lost near L'+(lost.z+1)+' '+(lost.x+1)+','+(lost.y+1):'body recovered'}</span></span><span>${lost?`<button data-rescue="${c.id}">Hire Rescuers ${fee}g</button>`:`<button data-res="${c.id}"${c.deathCause==='old age'?' disabled':''}>Resurrect ${fee}g</button>`}</span></div>`}).join('')||'<p>No dead adventurers.</p>'}<div id="rescueBox"></div><button data-close>Close</button>`);
+ $$('[data-res]').forEach(b=>b.onclick=()=>{let d=state.party.find(x=>String(x.id)===b.dataset.res),fee=Math.max(25,50*allGuildLevel(d));if(sel().gold<fee)return alert('Not enough gold.');sel().gold-=fee;d.dead=false;d.stoned=false;d.deathCause=null;d.hp=Math.max(1,Math.floor(d.maxHp*.35));d.mana=0;log(d.name+' is returned to life.');save();close();morgue()});
+ $$('[data-rescue]').forEach(b=>b.onclick=()=>{let d=state.party.find(x=>String(x.id)===b.dataset.rescue),fee=Math.max(25,50*allGuildLevel(d)),box=$('#rescueBox');box.innerHTML=`<div class="notice">Give the morgue workers your best estimate (1-based coordinates).<label>Level <input class="wininput" id="rz" type="number" min="1" max="${FLOORS.length}" value="${d.lost.z+1}"></label><label>X <input class="wininput" id="rx" type="number" min="1" value="${d.lost.x+1}"></label><label>Y <input class="wininput" id="ry" type="number" min="1" value="${d.lost.y+1}"></label><button id="sendRescue">Send rescuers (${fee}g)</button></div>`;$('#sendRescue').onclick=()=>{if(sel().gold<fee)return alert('Not enough gold.');sel().gold-=fee;let dz=Math.abs((+$('#rz').value-1)-d.lost.z),dx=Math.abs((+$('#rx').value-1)-d.lost.x),dy=Math.abs((+$('#ry').value-1)-d.lost.y),dist=dz*5+dx+dy,chance=Math.max(.08,.92-dist*.09);if(Math.random()<chance){d.lost=null;log('The morgue workers locate and recover '+d.name+'.')}else log('The rescue party returns without finding the body.');save();close();morgue()}}
+ )
+}
+function seer(){
+ let c=sel();modal(`<h2>The Seer</h2><p>For 20 gold the Seer will attempt to reveal something about the Depths.</p><button id="ask"${c.gold<20?' disabled':''}>Ask the Seer</button><div id="vision"></div><button data-close>Close</button>`);$('#ask').onclick=()=>{c.gold-=20;if(Math.random()<.25)$('#vision').innerHTML='<p>The vision is cloudy and of no use.</p>';else{let m=MONSTERS[rand(0,MONSTERS.length-1)];c.knownMon[m.n]=1;$('#vision').innerHTML=`<p>The Seer whispers of <b>${m.n}</b>: usually found around depth ${m.l}.</p>`}save()}
+}
+
+function mark(){state.explored[key()]=1;let found=state.party.filter(c=>c.dead&&c.lost&&c.lost.z===state.z&&c.lost.x===state.x&&c.lost.y===state.y);if(aliveParty().length&&found.length){for(let c of found)c.lost=null;log('The party recovers '+found.map(c=>c.name).join(', ')+' and can carry the body back to the Morgue.')}}
+function move(rel){
+ if(encounter||chest)return;let d=(state.dir+rel+4)%4;if(blocked(state.z,state.x,state.y,d)){log('A wall or hidden door blocks the party.');return dungeon()}state.x+=DIR[d][0];state.y+=DIR[d][1];state.steps++;mark();applyFeature();if(!encounter&&!chest&&Math.random()<.13)spawn();save();dungeon()
+}
+function applyFeature(){
+ let f=feature();if(!f)return;if(f.type==='rot'){state.dir=rand(0,3);log('The floor rotates beneath the party!')}if(f.type==='pit'){let to=Math.min(FLOORS.length-1,state.z+1);if(to!==state.z){state.z=to;let n=nearestOpen(state.z,state.x,state.y);state.x=n.x;state.y=n.y;for(let c of aliveParty())c.hp=Math.max(1,c.hp-rand(1,6));mark();log('The party falls through a pit!')}}if(f.type==='chute'){let ch=FLOORS[state.z]?.chutes?.find(c=>c.x-1===state.x&&c.y-1===state.y);let to=ch?Math.min(FLOORS.length-1,state.z+Math.max(1,ch.depth)):Math.min(FLOORS.length-1,state.z+1);state.z=to;let n=nearestOpen(state.z,state.x,state.y);state.x=n.x;state.y=n.y;mark();log('The party is swept down a chute!')}if(f.type==='tele'){let t=FLOORS[state.z]?.tele?.find(q=>q.x-1===state.x&&q.y-1===state.y);if(t){let z=Math.max(0,Math.min(FLOORS.length-1,t.z2-1)),n=nearestOpen(z,t.x2-1,t.y2-1);state.z=z;state.x=n.x;state.y=n.y;mark();log('A teleporter flashes and the party is displaced.')}}if(f.type==='water')log('Cold water slows every step.');if(f.type==='sand'&&Math.random()<.35){for(let c of aliveParty())c.hp=Math.max(1,c.hp-1);log('Quicksand drags at the party.')}if(f.type==='anti'){for(let c of aliveParty())c.status={};log('An antimagic field strips away spell enhancements.')}if(f.type==='fog')log('A magical haze obscures direction and distance.');if(f.type==='stud')log('The stone here feels unnaturally dangerous.')
+}
+function search(){
+ let per=Math.max(...aliveParty().map(c=>ability(c,'per')+Math.floor(c.stats[2]/4)),0),chance=Math.min(.92,.18+per*.025),found=false;for(let d=0;d<4;d++){let a=field(),dx=DIR[d][0],dy=DIR[d][1],b=field(state.z,state.x+dx,state.y+dy),secret=(d===0&&BIT(a?.flags,F.SN))||(d===1&&BIT(a?.flags,F.SE))||(d===2&&BIT(b?.flags,F.SN))||(d===3&&BIT(b?.flags,F.SE));if(secret&&!state.discovered[borderKey(state.z,state.x,state.y,d)]&&Math.random()<chance){state.discovered[borderKey(state.z,state.x,state.y,d)]=1;found=true;log('A secret door is discovered!')}}if(!found)log('The party searches carefully but finds nothing.');save();dungeon()
+}
+function stairs(){let q=field();if(BIT(q?.flags,F.UP)){if(state.z===0){state.town=true;log('The party returns safely to Marlith.');return show('town')}state.z--;let s=FLOORS[state.z],found=null;for(let y=0;y<s.h&&!found;y++)for(let x=0;x<s.w;x++)if(BIT(field(state.z,x,y)?.flags,F.DOWN)){found={x,y};break}let n=found||nearestOpen(state.z,state.x,state.y);state.x=n.x;state.y=n.y;mark();log('The party climbs to dungeon level '+(state.z+1)+'.');return dungeon()}if(BIT(q?.flags,F.DOWN)&&state.z<FLOORS.length-1){state.z++;let n=findStart(state.z);state.x=n.x;state.y=n.y;mark();log('The party descends to dungeon level '+(state.z+1)+'.');return dungeon()}log('There are no stairs here.')}
+function possibleFloorRanges(floorNum,isStud){let map=new Map();if(isStud){map.set(1,2/3);let r=Math.min(Math.floor(floorNum/5),floorNum);map.set(r,(map.get(r)||0)+1/3)}else{let base=Math.floor(floorNum/5),r1=Math.min(base+1,floorNum),r2=Math.min(base,floorNum);map.set(r2,.51);map.set(r1,(map.get(r1)||0)+.49)}return[...map.entries()]}
+function chooseMonster(){
+ let fl=FLOORS[state.z],q=field();if(!fl||!q||BIT(q.flags,F.ROCK))return null;let areaNum=Number(q.area||0),area=fl.areas?.[areaNum];if(!area||Number(area.spawn||0)===0)return null;
+ let floorNum=state.z+1,isStud=BIT(q.flags,F.STUD),ranges=possibleFloorRanges(floorNum,isStud),range=weightedChoice(ranges,x=>x[1]),floorRange=range?.[0]??0,baseFloor=isStud?floorNum+1:floorNum,min=baseFloor-floorRange,max=baseFloor,lair=Number(area.lair||0);
+ if(lair>0&&Math.random()<.75){let lm=MONSTERS.find(m=>m.id===lair);if(lm)return lm}
+ let eligible=MONSTERS.filter(m=>m.id>0&&m.l>=min&&m.l<=max&&m.chance>0);if(!eligible.length)return null;if(!(floorNum===1&&areaNum<18)&&Math.random()<.01){let subtypes=[...new Set(eligible.map(m=>m.subtypeId))],sub=subtypes[rand(0,subtypes.length-1)],pool=eligible.filter(m=>m.subtypeId===sub);return weightedChoice(pool,m=>m.chance)}
+ let mask=Number(area.spawn||0),pool=eligible.filter(m=>(mask&(2**m.subtypeId))!==0);return weightedChoice(pool,m=>m.chance)
+}
+function monsterGold(m,groupSize){let gf=Number(m.goldFactor||0),base=gf*Math.pow(10,gf-.5)/4,total=base/4+(Math.random()*(base/2)+Math.random()*(base/2))*Math.log((Number(m.l||1)+1)/Math.log(2));if(total<500)total=Math.random()*500+2;let ln=Math.log(Math.max(1,groupSize)+1);return Math.max(0,Math.floor(total*ln*(ln/2)))}
+function isLairedMonster(m){return FLOORS.some(f=>(f.areas||[]).some(a=>Number(a.lair||0)===m.id))}
+function lootFloorRange(m,kind){let min,max;if(m.n==='Asmodeus'){min=m.dropLevel-2;max=m.dropLevel}else{min=Math.floor(m.dropLevel/2);max=m.dropLevel;if(kind==='Chest')min++}if(min===max)min--;return[Math.max(min,1),Math.max(max,1)]}
+function pickLootItem(m,kind){let [mn,mx]=lootFloorRange(m,kind),records=(m.items||[]).slice(0,10),weights=new Map();for(let id of records)weights.set(id,(weights.get(id)||0)+1);let options=[];for(let [id,w] of weights){if(id<-1){let it=ITEMS.find(i=>i.id===Math.abs(id)-2);if(it)options.push({w,items:[it]})}else{let pool=ITEMS.filter(i=>i.floor>=mn&&i.floor<=mx&&i.rarity>0&&(id===-1||i.subtypeId===id));if(pool.length)options.push({w,items:pool})}}if(!options.length)return null;let opt=weightedChoice(options,x=>x.w);return weightedChoice(opt.items,i=>Math.max(1,i.rarity))}
+function chestKindFor(m){let box=Number(m.box?.[1]||0)+(isLairedMonster(m)?25:0),ch=Number(m.box?.[2]||0)+(isLairedMonster(m)?25:0),r=Math.random()*100;if(r<Math.min(100,ch))return'Chest';if(r<Math.min(100,ch+Math.max(0,box-Math.min(box,ch))))return'Box';return null}
+function spawn(){let base=chooseMonster();if(!base)return;let count=rand(1,Math.min(64,Math.max(1,base.ingroup||1))),group=[];for(let i=0;i<count;i++){let hp=Math.max(1,base.h);group.push({...base,hp,max:hp,asleep:false})}encounter={group,round:1,base};for(let c of aliveParty())c.knownMon[base.n]=1;log(count+' '+base.n+(count>1?'s':'')+' confront the party!')}
+function combatHTML(){let groups=encounter.group.filter(m=>m.hp>0),m=groups[0],pct=Math.max(0,100*m.hp/m.max);return `<div class="combat"><h3>${groups.length} × ${m.n}</h3><div class="bar"><i style="width:${pct}%"></i></div><p class="tiny">Front monster ${Math.max(0,m.hp)} / ${m.max} hits · round ${encounter.round}</p><div class="grid3"><button id="attack">Attack</button><button id="cast">Cast</button><button id="defend">Defend</button><button id="charm">Charm</button><button id="auto">Auto Round</button><button id="run">Run</button></div></div>`}
+function partyAttack(auto=false){let living=aliveParty();for(let c of living){if(!encounter)break;charAttack(c);for(let comp of c.companions.slice(0,4)){if(!encounter)break;let m=front();if(!m)break;let raw=Math.max(1,Math.floor(comp.a*.65)+rand(0,3)-Math.floor(m.d/2)),d=Math.min(m.hp,raw);m.hp-=d;let xp=awardCombatXp(c,d,m.guildLevel,false);log(comp.n+' strikes '+m.n+' for '+d+(xp?' (+'+xp+' XP to '+c.name+')':'')+'.');cleanEncounter()}}if(encounter){monsterTurn();encounter.round++}save();dungeon()}
+function statCombatBonus(c){let f=(v,lo,hi,rate)=>v>hi?(v-hi)*rate:v<lo?-(lo-v)*rate:0;let s=c.stats;return{a:f(s[0],8,12,2)+f(s[5],8,12,2)+f(s[1],8,14,1)+f(s[2],8,14,1),d:f(s[0],8,12,2)+f(s[5],8,12,2)+f(s[1],8,14,1)+f(s[2],8,14,1)}}
+function charAttack(c){
+ if(c.dead)return;let m=front();if(!m)return;let g=gear(c),ab=ability(c,'fight'),sw=Math.max(1,1+Math.min(4,Math.floor(ability(c,'swings')/100)));for(let n=0;n<sw&&m.hp>0;n++){let statAD=statCombatBonus(c),atk=Math.max(0,g.a+ab+statAD.a),hit=.50+(atk-m.d)*.01;if(Math.random()>Math.max(.08,Math.min(.95,hit))){log(c.name+' misses '+m.n+'.');continue}let raw=Math.max(1,Math.round((c.stats[0]+Math.max(0,g.a)+Math.max(0,ab/10))*Math.max(.2,ITEMS.find(i=>i.id===equippedObj(c,'weapon')?.id)?.damageMod||1)/4)+rand(0,4)),d=Math.min(m.hp,raw);if(Math.random()<Math.min(.35,ability(c,'crit')/1000)){d=Math.min(m.hp,d*2);log('Critical hit!')}m.hp-=d;let xp=awardCombatXp(c,d,m.guildLevel,true);log(c.name+' hits '+m.n+' for '+d+(xp?' (+'+xp+' XP)':'')+'.')}cleanEncounter()
+}
+function front(){return encounter?.group.find(m=>m.hp>0)}
+function cleanEncounter(){
+ if(!encounter)return;if(encounter.group.every(m=>m.hp<=0)){let m=encounter.base||encounter.group[0],count=encounter.group.length,gold=monsterGold(m,count);for(let c of aliveParty()){let share=Math.floor(gold/Math.max(1,aliveParty().length));c.gold+=share;c.kills=(c.kills||0)+count;progressKill(m.n)}log('The '+m.n+(count>1?' group':'')+' is defeated. '+gold+' gold is recovered and divided among survivors.');let kind=chestKindFor(m);encounter=null;if(kind)makeChest(m,kind)}
+}
+function monsterTurn(){
+ if(!encounter)return;let targets=aliveParty();if(!targets.length)return partyWipe();for(let m of encounter.group.filter(x=>x.hp>0)){if(m.asleep){m.asleep=false;continue}let c=targets[rand(0,targets.length-1)],g=gear(c),sb=statCombatBonus(c),d=Math.max(1,Math.round(Math.max(.25,m.damageMod)*(m.a+rand(0,4))-Math.max(0,(g.d+sb.d)/3)));if(c.status.defend)d=Math.max(1,Math.floor(d/2));c.hp-=d;log(m.n+' hits '+c.name+' for '+d+'.');if(m.special&&Math.random()<.12)monsterSpecial(m,c);if(c.hp<=0){killCharacter(c,m.n);targets=aliveParty();if(!targets.length)return partyWipe()}}for(let c of state.party)c.status.defend=false
+}
+function monsterSpecial(m,c){let r=Math.random();if(r<.2&&c.inv.length){let idx=rand(0,c.inv.length-1),o=c.inv[idx];if(!Object.values(c.eq).includes(o.uid)){log(m.n+' destroys '+itemName(o)+'!');c.inv.splice(idx,1)}}else if(r<.4){c.status.poison=(c.status.poison||0)+1;log(c.name+' is poisoned.')}else if(r<.55){c.status.disease=true;log(c.name+' is diseased.')}else if(r<.7){addAge(c,rand(1,4));log(c.name+' is unnaturally aged.')}else if(r<.8){c.stoned=true;c.dead=true;c.deathCause='petrification';c.hp=0;log(c.name+' is turned to stone!')}else{let i=rand(0,5);c.stats[i]=Math.max(RACES[c.race].min[i],c.stats[i]-1);log(c.name+' loses 1 '+STATN[i]+'.')}}
+function killCharacter(c,cause){c.dead=true;c.hp=0;c.deathCause='slain by '+cause;c.lost={z:state.z,x:state.x,y:state.y};log(c.name+' is slain!')}
+function partyWipe(){for(let c of state.party)if(c.dead&&!c.lost)c.lost={z:state.z,x:state.x,y:state.y};encounter=null;chest=null;state.town=true;log('No living adventurer remains. The expedition ends; lost bodies must be recovered through the Morgue or another expedition.');save();show('town')}
+function makeChest(m,kind){let maxItems=4,items=[];if(Math.random()*100<Math.max(0,m.itemChance||100)){let n=kind==='Chest'?rand(1,maxItems):rand(0,1);for(let q=0;q<n;q++){let it=pickLootItem(m,kind);if(it)items.push(objectInstance(it,false))}}let level=state.z+1,traps=['None','Flame'];if(level>=4)traps.push('Fear','Withering','Teleport');if(level>=7)traps.push('Slime');if(level>=8)traps.push('Blackout','Fate');let magic=Math.random()<Math.min(.5,(level+1)*.02),lock=rand(1,(level+2)*2),locked=Math.random()*100<Math.max(0,m.lock||0);chest={kind,monsterId:m.id,trap:traps[rand(0,traps.length-1)],locked,magicLock:magic,lockLevel:lock,items,gold:0};log('The monsters leave a '+kind.toLowerCase()+' behind.')}
+function chestHTML(){return `<div class="combat"><h3>${chest.kind}</h3><p>${chest.locked?(chest.magicLock?'It is magically locked.':'It is locked.'):'It appears unlocked.'}</p><div class="grid3"><button id="inspectChest">Inspect</button><button id="disarmChest">Disarm/Open</button><button id="openChest">Take Contents</button><button id="leaveChest">Leave</button></div></div>`}
+function inspectChest(){let c=sel(),skill=ability(c,'thief')+Math.floor(c.stats[2]/2)+Math.floor(c.stats[5]/2),chance=Math.min(.95,.15+skill*.02);if(Math.random()<chance)log('Inspection suggests: '+chest.trap+' trap, lock level '+chest.lockLevel+(chest.magicLock?' (magic).':'.'));else log('You cannot determine the protection on the '+chest.kind.toLowerCase()+'.')}
+function disarmChest(){let c=sel(),skill=ability(c,'thief')+Math.max(0,c.stats[5]-8)*2,chance=Math.max(.03,Math.min(.95,(skill-chest.lockLevel*3+30)/100));if(chest.magicLock)chance*=.35;if(Math.random()<chance){chest.trap='None';chest.locked=false;let xp=Math.max(0,Math.floor(chance*100*(MONSTERS.find(m=>m.id===chest.monsterId)?.guildLevel||1)*.5*guildLevel(c)*(1-(aliveParty().length-1)*.04)));c.guildXp[c.activeGuild]=Math.min(xpPin(c),activeXp(c)+xp);c.totalXp+=xp;log(c.name+' disarms the '+chest.kind.toLowerCase()+(xp?' and gains '+xp+' XP.':'.'))}else{log(c.name+' fails to disarm it.');triggerTrap()}save();dungeon()}
+function triggerTrap(){if(chest.trap==='None')return;let c=sel(),t=chest.trap;log('The '+t+' trap triggers!');if(t==='Flame'){c.hp-=rand(2,8+state.z*3)}else if(t==='Fear'){c.companions=[];log(c.name+"'s companions flee.")}else if(t==='Withering'){addAge(c,4);log(c.name+' ages four weeks.')}else if(t==='Teleport'){let f=FLOORS[state.z],x=rand(0,f.w-1),y=rand(0,f.h-1),n=nearestOpen(state.z,x,y);state.x=n.x;state.y=n.y;mark()}else if(t==='Slime'){if(c.inv.length){let o=c.inv.splice(rand(0,c.inv.length-1),1)[0];log(itemName(o)+' is dissolved.')}}else if(t==='Blackout'){for(let p of aliveParty())p.status={};log('All magical enhancements are extinguished.')}else if(t==='Fate'){c.hp=rand(1,c.maxHp);c.mana=rand(0,c.maxMana);log(c.name+"'s hits and spell points are randomized.")}chest.trap='None';if(c.hp<=0){killCharacter(c,'a chest trap');if(!aliveParty().length)return partyWipe()}}
+function openChest(){if(chest.locked){log('The '+chest.kind.toLowerCase()+' is still locked.');return}triggerTrap();if(!chest)return;for(let o of chest.items){let c=sel();if(c.inv.length>=40){log(c.name+' cannot carry another object.');break}c.inv.push(o);progressItem(o.id);log(c.name+' takes '+itemName(o)+'.')}chest=null;save();dungeon()}
+function spellGuildLevel(c,g,s){let gd=GUILDS[g];if(!gd)return 0;let mod=Number(gd.spellMods?.[s.cat]||0),cap=Number(gd.spellCaps?.[s.cat]||0);if(cap<=0)return 0;let lvl=Math.floor(guildLevel(c,g)/2);return Math.min(cap,Math.max(0,mod>0?lvl/mod:lvl))}
+function spellKnown(c,s){if((s.req||[]).some((v,i)=>Number(v||0)>Number(c.stats[i]||0)))return false;return Object.keys(c.guilds||{}).some(g=>spellGuildLevel(c,g,s)>=s.l)}
+function bestSpellGuild(c,s){let gs=Object.keys(c.guilds||{}).filter(g=>spellGuildLevel(c,g,s)>=s.l);if(!gs.length)return null;return gs.sort((a,b)=>spellCostForGuild(c,s,a)-spellCostForGuild(c,s,b))[0]}
+function spellCostForGuild(c,s,g){let gd=GUILDS[g],sl=spellGuildLevel(c,g,s);if(!gd||sl<=0)return 999999;let gm=Number(gd.spellMods?.[s.cat]||0);if(!gm)gm=1;return Math.max(0,Math.floor((s.l/sl)*s.baseCost*gm*1.9-.0001))}
+function usableSpells(c){return SPELLS.filter(s=>spellKnown(c,s)).map(s=>({...s,actualCost:spellCostForGuild(c,s,bestSpellGuild(c,s))})).filter(s=>c.mana>=s.actualCost)}
+function castMenu(){let c=sel();if(c.dead)return;let us=usableSpells(c);modal(`<h2>${c.name}'s Spell Book</h2>${us.map(s=>`<div class="row"><span><b>${s.n}</b><br><span class="tiny">level ${s.l} · ${s.actualCost} spell points</span></span><button data-spell="${s.n}">Cast</button></div>`).join('')||'<p>No castable spells.</p>'}<button data-close>Cancel</button>`);$$('[data-spell]').forEach(b=>b.onclick=()=>{let s=us.find(x=>x.n===b.dataset.spell);close();cast(c,s)})}
+function cast(c,s){
+ let cost=s.actualCost??spellCostForGuild(c,s,bestSpellGuild(c,s));if(c.mana<cost)return log('Not enough spell points.');if(feature()?.type==='anti')return log('Magic fails on this antimagic square.');c.mana-=cost;
+ if(s.k==='heal'){let n=s.p+rand(0,Math.floor(c.stats[2]/2));c.hp=Math.min(c.maxHp,c.hp+n);log(c.name+' casts '+s.n+' and restores '+n+' hits.')}
+ else if(s.k==='damage'&&encounter){let m=front(),raw=s.p+Math.floor(guildLevel(c)/2)+rand(0,6),n=Math.min(m.hp,Math.max(1,raw));m.hp-=n;let xp=awardCombatXp(c,n,m.guildLevel,true);log(c.name+' casts '+s.n+' for '+n+' damage'+(xp?' (+'+xp+' XP)':'')+'.');cleanEncounter()}
+ else if(s.k==='sleep'&&encounter){for(let m of encounter.group)if(Math.random()<.7)m.asleep=true;log('A wave of magical sleep passes over the monsters.')}
+ else if(s.k==='charm'&&encounter){let m=front();if(!m)return;if(s.types&&s.types!==m.type)return log('That spell cannot bind this creature.');let chance=.28+c.stats[4]*.015+guildLevel(c,'Mage')*.03-m.l*.08;if(Math.random()<chance){c.companions.push({n:m.n,l:m.l,hp:m.max,a:m.a,d:m.d,type:m.type,bind:rand(55,80)});m.hp=0;log(m.n+' is bound to '+c.name+' as a companion.');cleanEncounter()}else log(m.n+' resists the charm.')}
+ else if(s.k==='open'&&chest){chest.locked=false;chest.trap='None';log('The magical lock and trap release.')}
+ else if(s.k==='sanctuary'){state.sanctuary={z:state.z,x:state.x,y:state.y};log('Sanctuary is set at the current location.')}
+ else if(s.k==='portal'){state.z=state.sanctuary.z;state.x=state.sanctuary.x;state.y=state.sanctuary.y;encounter=null;chest=null;mark();log('The party passes through an ethereal portal to the sanctuary.')}
+ else if(s.k==='protect'){c.status.protect=8;log(c.name+' is surrounded by a protective field.')}
+ else if(s.k==='detect'){search();return}
+ else if(s.k==='raise'){let d=state.party.find(x=>x.dead&&x.deathCause!=='old age');if(d){d.dead=false;d.stoned=false;d.hp=1;d.deathCause=null;log(d.name+' is raised with a single hit point.')}}
+ else if(s.k==='resurrect'){let d=state.party.find(x=>x.dead&&x.deathCause!=='old age');if(d){d.dead=false;d.stoned=false;d.hp=d.maxHp;d.deathCause=null;log(d.name+' is resurrected.')}}
+ else if(s.k==='flesh'){let d=state.party.find(x=>x.stoned);if(d){d.stoned=false;d.dead=false;d.hp=Math.max(1,d.maxHp>>2);log(d.name+' is restored from stone.')}}
+ else if(s.k==='restore'){c.status.poison=0;c.status.disease=false;log(c.name+' is restored.')}
+ save();if(current==='dungeon'){if(encounter)monsterTurn();dungeon()}else inventory()
+}
+function tryCharm(){let c=sel(),s=usableSpells(c).find(x=>x.k==='charm'&&(!x.types||x.types===front()?.type));if(!s)return log(c.name+' has no suitable charm spell ready.');cast(c,s)}
+function defend(){let c=sel();c.status.defend=true;log(c.name+' braces for attack.');monsterTurn();encounter.round++;save();dungeon()}
+function flee(){let avg=aliveParty().reduce((s,c)=>s+c.stats[5],0)/Math.max(1,aliveParty().length);if(Math.random()<Math.min(.85,.35+avg*.02)){log('The party escapes the encounter.');encounter=null}else{log('The party cannot escape.');monsterTurn()}save();dungeon()}
+
+function dungeon(){
+ current='dungeon';if(state.town)return town();
+ $('#screen').innerHTML=`<div class="layout">${partyHTML()}<div><div class="panel"><h2>Dungeon — Level ${state.z+1}</h2><div class="view"><canvas id="view" width="600" height="340"></canvas></div><div class="dpad"><button class="up" id="fwd">▲ Forward</button><button class="left" id="tl">↶ Turn</button><button class="back" id="back">▼ Back</button><button class="right" id="tr">↷ Turn</button></div><div class="commands"><button id="stairs">Take Stairs</button><button id="search">Search</button><button id="castBtn">Cast</button><button id="mapBtn">Map</button></div>${encounter?combatHTML():chest?chestHTML():''}</div></div><div class="rightPanel"><div class="panel"><h3>Auto Map</h3><div class="mapbox"><canvas id="map" width="360" height="360"></canvas></div><p class="tiny">PUBLIC floor ${state.z+1} · facing ${DN[state.dir]}</p></div></div></div>`;
+ bindParty();drawView();drawMap();$('#fwd').onclick=()=>move(0);$('#back').onclick=()=>move(2);$('#tl').onclick=()=>{state.dir=(state.dir+3)%4;save();dungeon()};$('#tr').onclick=()=>{state.dir=(state.dir+1)%4;save();dungeon()};$('#stairs').onclick=stairs;$('#search').onclick=search;$('#castBtn').onclick=castMenu;$('#mapBtn').onclick=()=>modal('<h2>Automap</h2><p>Visited squares are recorded automatically from the actual PUBLIC dungeon layout.</p><button data-close>Close</button>');
+ if(encounter){$('#attack').onclick=()=>{charAttack(sel());if(encounter){monsterTurn();encounter.round++}save();dungeon()};$('#cast').onclick=castMenu;$('#defend').onclick=defend;$('#charm').onclick=tryCharm;$('#auto').onclick=()=>partyAttack(true);$('#run').onclick=flee}
+ if(chest){$('#inspectChest').onclick=inspectChest;$('#disarmChest').onclick=disarmChest;$('#openChest').onclick=openChest;$('#leaveChest').onclick=()=>{chest=null;log('The party leaves the treasure behind.');dungeon()}}
+}
+function drawView(){
+ let c=$('#view'),x=c.getContext('2d'),cw=c.width,ch=c.height;x.fillStyle='#030303';x.fillRect(0,0,cw,ch);let boxes=[[5,7,cw-10,ch-14],[72,48,cw-144,ch-96],[137,87,cw-274,ch-174],[193,119,cw-386,ch-238]];for(let n=0;n<3;n++){let px=state.x+DIR[state.dir][0]*n,py=state.y+DIR[state.dir][1]*n;if(!pass(state.z,px,py))break;let a=boxes[n],b=boxes[n+1];x.strokeStyle=n?'#666':'#aaa';x.strokeRect(...a);let L=(state.dir+3)%4,R=(state.dir+1)%4;if(blocked(state.z,px,py,L)){x.fillStyle=n?'#222':'#333';x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.lineTo(b[0],b[1]+b[3]);x.lineTo(a[0],a[1]+a[3]);x.fill()}if(blocked(state.z,px,py,R)){x.fillStyle=n?'#202020':'#303030';x.beginPath();x.moveTo(a[0]+a[2],a[1]);x.lineTo(b[0]+b[2],b[1]);x.lineTo(b[0]+b[2],b[1]+b[3]);x.lineTo(a[0]+a[2],a[1]+a[3]);x.fill()}if(blocked(state.z,px,py,state.dir)){x.fillStyle='#383838';x.fillRect(b[0],b[1],b[2],b[3]);x.strokeStyle=hasDoor(state.z,px,py,state.dir)?'#b98':'#888';x.strokeRect(...b);break}}
+ let f=feature();if(f){x.fillStyle='#bbb';x.font='14px serif';x.textAlign='center';x.fillText({rot:'Rotator',pit:'Pit',tele:'Teleporter',water:'Water',sand:'Quicksand',anti:'Antimagic',fog:'Fog',chute:'Chute',stud:'Stud'}[f.type]||'',cw/2,ch-18)}if(encounter){let m=front();x.fillStyle='#280000';x.fillRect(cw/2-120,ch/2-50,240,100);x.strokeStyle='#a00';x.strokeRect(cw/2-120,ch/2-50,240,100);x.fillStyle='#fff';x.font='bold 24px serif';x.textAlign='center';x.fillText(m.n,cw/2,ch/2)}
+}
+function drawMap(){let c=$('#map'),x=c.getContext('2d'),f=FLOORS[state.z],sx=c.width/f.w,sy=c.height/f.h;x.fillStyle='#111';x.fillRect(0,0,c.width,c.height);for(let y=0;y<f.h;y++)for(let xx=0;xx<f.w;xx++){if(!state.explored[state.z+','+xx+','+y])continue;let q=field(state.z,xx,y);x.fillStyle=BIT(q.flags,F.ROCK)?'#222':BIT(q.flags,F.UP)?'#669':BIT(q.flags,F.DOWN)?'#966':'#ddd';x.fillRect(xx*sx,y*sy,sx-1,sy-1)}x.fillStyle='#f00';x.beginPath();x.arc(state.x*sx+sx/2,state.y*sy+sy/2,Math.min(sx,sy)*.34,0,Math.PI*2);x.fill()}
+function character(){current='character';let c=sel(),g=gear(c),sb=statCombatBonus(c);$('#screen').innerHTML=`<div class="layout">${partyHTML()}<div><div class="panel"><h2>${esc(c.name)}</h2><p><b>${c.gender} ${c.race} · ${c.align}</b><br>Age ${ageYears(c)} / approx. ${RACES[c.race].age} · Size ${RACES[c.race].size}</p><div class="grid3">${STATN.map((n,i)=>`<div class="box"><b>${c.stats[i]}</b><small>${n}</small></div>`).join('')}</div><div class="sep"></div><p>Hits ${c.hp}/${c.maxHp} · Spell points ${c.mana}/${c.maxMana}<br>Item A/D ${g.a}/${g.d} · Stat A/D ${sb.a}/${sb.d}<br>${c.activeGuild} XP ${activeXp(c)}/${xpNeed(c)} · pin ${xpPin(c)}<br>Total XP ${c.totalXp} · Gold ${c.gold} · Bank ${c.bank}</p><h3>Guilds</h3>${Object.entries(c.guilds).map(([n,l])=>`<div>${n}: level ${l}${n===c.activeGuild?' (active)':''}</div>`).join('')}<h3>Companions</h3>${c.companions.map(m=>`<div>${m.n} · ${m.hp} hits</div>`).join('')||'<span class="tiny">None</span>'}</div></div><div class="rightPanel"><div class="panel"><h3>Guild Abilities</h3><p>Thieving ${ability(c,'thief')}<br>Backstab ${ability(c,'back')}<br>Critical hit ${ability(c,'crit')}<br>Multiple swings ${ability(c,'swings')}<br>Fighting ${ability(c,'fight')}<br>Perception ${ability(c,'per')}</p></div></div></div>`;bindParty()}
+function inventory(){current='inventory';let c=sel();$('#screen').innerHTML=`<div class="layout">${partyHTML()}<div><div class="panel"><h2>Objects & Spells — ${esc(c.name)}</h2><div class="tabs"><button class="active">Objects</button><button id="spTab">Spells</button><button id="compTab">Companions</button></div><div id="objList">${invHTML(c)}</div></div></div><div class="rightPanel"><div class="panel"><h3>Equipment</h3>${EQUIP_SLOTS.map(slot=>`<div><b>${slot}</b>: ${equippedName(c,slot)}</div>`).join('')}</div></div></div>`;bindParty();bindInv(c);$('#spTab').onclick=()=>{$('#objList').innerHTML=spellsHTML(c);$$('[data-castinv]').forEach(b=>b.onclick=()=>cast(c,SPELLS.find(s=>s.n===b.dataset.castinv)))};$('#compTab').onclick=()=>{$('#objList').innerHTML=c.companions.map(m=>`<div class="row"><span><b>${m.n}</b><br><span class="tiny">${m.type} · ${m.hp} hits · bind ${m.bind}%</span></span></div>`).join('')||'<p>No companions.</p>'}}
+function invHTML(c){return c.inv.map((o,idx)=>{let i=ITEMS.find(q=>q.id===o.id),eq=Object.values(c.eq).includes(o.uid);return `<div class="row"><span><b>${itemName(o)}</b>${eq?' <b>[E]</b>':''}<br><span class="tiny">ID ${o.idLevel}/3${o.idLevel>=3?' · '+i.subtype+' · A/D '+i.att+'/'+i.def+(o.cursed?' · CURSED':''):''}</span></span><span>${i.slot==='object'?`<button data-use="${idx}">Use</button>`:`<button data-equip="${idx}">${eq?'Unequip':'Equip'}</button>`} <button data-drop="${idx}">Drop</button></span></div>`}).join('')||'<p>Inventory empty.</p>'}
+function bindInv(c){
+ $$('[data-equip]').forEach(b=>b.onclick=()=>{let o=c.inv[+b.dataset.equip],i=ITEMS.find(q=>q.id===o.id),slot=i.slot,eq=Object.values(c.eq).includes(o.uid);if(eq){if(o.cursed||o.stuck)return alert('This item is cursed and cannot be removed.');for(let s of Object.keys(c.eq))if(c.eq[s]===o.uid)c.eq[s]=null;log(c.name+' unequips '+itemName(o)+'.');save();return inventory()}if(!canEquipItem(c,i))return alert('Your active guild, guild level or statistics do not meet this item\'s requirements.');if(slot==='object')return;let old=equippedObj(c,slot);if(old){if(old.cursed||old.stuck)return alert('The currently equipped item is cursed and cannot be removed.');return alert('That equipment slot is already occupied.')}c.eq[slot]=o.uid;if(o.cursed){o.stuck=true;log('The item binds itself to '+c.name+' — it is cursed!')}if((o.idLevel||0)<3)log('Warning: '+c.name+' equips an unidentified object.');log(c.name+' equips '+((o.idLevel||0)>=3?i.n:'the unidentified object')+'.');save();inventory()});
+ $$('[data-use]').forEach(b=>b.onclick=()=>{let idx=+b.dataset.use,o=c.inv[idx],i=ITEMS.find(q=>q.id===o.id);if(i.spellId&&o.charges>0){let s=SPELLS.find(x=>x.id===i.spellId);if(s){o.charges--;cast(c,{...s,actualCost:0});if(o.charges<=0&&i.charges>0)log(i.n+' has no charges remaining.')}}else log('Nothing happens.');if(o.idLevel<3){o.idLevel=Math.min(3,o.idLevel+1);o.known=o.idLevel>=3}save();inventory()});
+ $$('[data-drop]').forEach(b=>b.onclick=()=>{let idx=+b.dataset.drop,o=c.inv[idx];if(Object.values(c.eq).includes(o.uid))return alert('Unequip it first.');if(confirm('Drop '+itemName(o)+'?')){c.inv.splice(idx,1);save();inventory()}})
+}
+function spellsHTML(c){let all=SPELLS.filter(s=>spellKnown(c,s));return all.map(s=>{let g=bestSpellGuild(c,s),cost=g?spellCostForGuild(c,s,g):999999;return `<div class="row"><span><b>${s.n}</b><br><span class="tiny">spell ${s.l} · ${cost} SP · via ${g||'—'}</span></span><button data-castinv="${s.n}"${c.mana<cost?' disabled':''}>Cast</button></div>`}).join('')||'<p>No spells known.</p>'}
+function library(){current='library';let c=sel(),knownM=MONSTERS.filter(m=>c.knownMon[m.n]),knownI=ITEMS.filter(i=>c.knownItem[i.id]);$('#screen').innerHTML=`<div class="layout">${partyHTML()}<div><div class="panel"><h2>Library of Knowledge</h2><div class="tabs"><button class="active">Creatures</button><button id="itemLib">Objects</button></div><div id="libList">${knownM.map(m=>`<div class="row"><span><b>${m.n}</b><br><span class="tiny">level ${m.l} · hits ${m.h} · A/D ${m.a}/${m.d} · ${m.subtype}</span></span></div>`).join('')||'<p class="tiny">No creature information has been recorded yet.</p>'}</div></div></div><div class="rightPanel"><div class="panel"><h3>PUBLIC Database</h3><p>Creatures known ${knownM.length}/${MONSTERS.length}<br>Objects known ${knownI.length}/${ITEMS.length}<br>Spells in data ${SPELLS.length}</p></div></div></div>`;bindParty();$('#itemLib').onclick=()=>{$('#libList').innerHTML=knownI.map(i=>`<div class="row"><span><b>${i.n}</b><br><span class="tiny">${i.subtype} · A/D ${i.att}/${i.def} · value ${i.p} · floor ${i.floor}</span></span></div>`).join('')||'<p>No object information recorded.</p>'}}
+function records(){current='records';let totalKills=state.party.reduce((n,c)=>n+(c.kills||0),0),deep=Math.max(0,...Object.keys(state.explored||{}).map(k=>+k.split(',')[0]));$('#screen').innerHTML=`<div class="layout">${partyHTML()}<div><div class="panel"><h2>Hall of Records</h2><p>Party expeditions are recorded here.</p>${state.party.map(c=>`<div class="row"><span><b>${esc(c.name)}</b><br><span class="tiny">${c.race} · ${c.activeGuild} ${guildLevel(c)} · ${c.kills||0} kills · ${c.totalXp||0} total experience</span></span></div>`).join('')}<div class="notice">Total kills: <b>${totalKills}</b><br>Deepest PUBLIC level reached: <b>${deep+1}</b><br>Mapped squares: <b>${Object.keys(state.explored||{}).length}</b></div></div></div><div class="rightPanel"><div class="panel"><h3>Party</h3><p>${state.party.length} adventurer${state.party.length===1?'':'s'}<br>${aliveParty().length} currently able to adventure</p></div></div></div>`;bindParty()}
+function modal(h){$('#dialog').innerHTML=h;$('#modal').classList.add('on');$$('[data-close]').forEach(b=>b.onclick=close)}
+function close(){$('#modal').classList.remove('on')}
+$('#modal').onclick=e=>{if(e.target===$('#modal'))close()};
+$$('[data-go]').forEach(b=>b.onclick=()=>{if(!state)return;if(b.dataset.go==='town'&&!state.town)return log('The city can only be reached through the dungeon stairs or magic.');if(b.dataset.go==='dungeon'&&state.town)return log('Enter the dungeon from the City screen.');show(b.dataset.go)});
+$('#saveBtn').onclick=()=>{if(!state)return;let blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='mordor-browser-save.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
+function downloadOfflineCopy(){
+ const clone=document.documentElement.cloneNode(true),tag=clone.querySelector('#mordor-data');
+ if(!tag)return;
+ tag.textContent=JSON.stringify(PUBLIC_DATA).replace(/</g,'\\u003c');
+ const html='<!doctype html>\n'+clone.outerHTML,blob=new Blob([html],{type:'text/html'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download='mordor-faithful-v5-offline.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ log('A self-contained PUBLIC v1.1 browser copy was downloaded.');
+}
+$('#offlineBtn').onclick=downloadOfflineCopy;
+$('#aboutBtn').onclick=()=>modal(`<h2>About this build</h2><p><b>v5 rules alignment pass.</b> This build uses the actual PUBLIC v1.1 races, guilds, item classes, monster classes, spells and three shareware dungeon floors. It also replaces earlier reconstructed economy and progression rules with data-driven/original-derived rules for starting characters, point-buy stats, guild XP and pinning, level costs, spell points/costs, area-based monster spawning, monster gold, monster loot tables, chest/box selection, item rarity, store inventory/pricing, multi-step identification, realignment and uncursing.</p><p>Combat hit/damage resolution, several specialised spell effects, some monster special-attack probabilities, companion pricing/binding and Morgue/Seer details are still reconstructed where no verified original formula is currently available.</p><button id="backupRestore">Restore Save File</button> <button id="downloadOffline">Download Self-contained Game</button> <button id="reset" class="danger">Erase Browser Save</button> <button data-close>Close</button><input id="restoreFile" type="file" accept=".json,application/json" hidden>`);
+document.addEventListener('click',e=>{if(e.target.id==='backupRestore')$('#restoreFile').click();if(e.target.id==='downloadOffline'){close();downloadOfflineCopy()}if(e.target.id==='reset'&&confirm('Erase this browser save?')){localStorage.removeItem(SAVE);location.reload()}});
+document.addEventListener('change',async e=>{if(e.target.id==='restoreFile'&&e.target.files[0]){try{state=JSON.parse(await e.target.files[0].text());normalize();save();location.reload()}catch{alert('That save file could not be read.')}}});
+setInterval(()=>$('#clock').textContent=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),1000);
+state=load();if(state){normalize();$('#menu').hidden=false;log('Saved party restored.');show(state.town?'town':'dungeon')}else setup();
+})().catch(e=>{console.error(e);let el=document.getElementById('screen');if(el)el.innerHTML='<div class="panel"><h2>Could not load PUBLIC v1.1 data</h2><p>'+String(e.message||e)+'</p><p>Open the hosted version while online, or rebuild this file with the PUBLIC data embedded.</p></div>';});
+</script>
+</body>
+</html>
